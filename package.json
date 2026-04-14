@@ -1,0 +1,53 @@
+{
+  "name": "aisync",
+  "version": "0.1.0",
+  "description": "Sync AI tool configurations between git worktrees",
+  "type": "module",
+  "bin": {
+    "aisync": "./dist/index.mjs"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "check": "biome check",
+    "check:fix": "biome check --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "prepublishOnly": "pnpm build"
+  },
+  "keywords": [
+    "ai",
+    "sync",
+    "worktree",
+    "git",
+    "claude",
+    "cursor",
+    "codex",
+    "copilot",
+    "cli"
+  ],
+  "author": "Léo Stewart",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/leostewart/aisync.git"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "commander": "^14.0.3",
+    "picocolors": "^1.1.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.12",
+    "@types/node": "^25.6.0",
+    "tsdown": "^0.21.8",
+    "typescript": "^6.0.2",
+    "vitest": "^4.1.4"
+  }
+}

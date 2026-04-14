@@ -13,9 +13,22 @@ pnpm test             # Run tests (vitest)
 pnpm test:watch       # Watch mode
 ```
 
-Test the CLI directly after build:
+Test the CLI after build:
 ```bash
 node dist/index.mjs <command>
+```
+
+Or with global link:
+```bash
+pnpm link --global
+aisync <command>
+```
+
+To test a real copy flow, create a worktree:
+```bash
+git worktree add ../aisync-test feature-test
+node dist/index.mjs copy . ../aisync-test
+git worktree remove ../aisync-test   # cleanup
 ```
 
 ## Architecture

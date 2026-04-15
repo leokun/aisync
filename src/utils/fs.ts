@@ -1,6 +1,15 @@
 import { randomBytes } from "node:crypto";
-import { cp, mkdir, rename, stat, writeFile } from "node:fs/promises";
+import {
+  cp,
+  mkdir,
+  rename,
+  rm,
+  stat,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { dirname, join } from "node:path";
+import { isWindows } from "./platform.js";
 
 export async function exists(path: string): Promise<boolean> {
   try {
@@ -35,6 +44,16 @@ export async function copyItem(src: string, dest: string): Promise<void> {
     await cp(src, tmpPath);
     await rename(tmpPath, dest);
   }
+}
+
+export async function linkItem(target: string, dest: string): Promise<void> {
+  await mkdir(dirname(dest), { recursive: true });
+  const type = isWindows() && (await isDirectory(target)) ? "dir" : undefined;
+  await symlink(target, dest, type);
+}
+
+export async function removeItem(path: string): Promise<void> {
+  await rm(path, { recursive: true, force: true });
 }
 
 export async function writeJson(path: string, data: unknown): Promise<void> {

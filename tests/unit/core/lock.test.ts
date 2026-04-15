@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { CopyItem } from "../../../src/core/copier.js";
+import type { LinkItem } from "../../../src/core/linker.js";
 import { LOCK_FILENAME, readLock, writeLock } from "../../../src/core/lock.js";
 import { createTempDir, removeTempDir } from "../../helpers/fixtures.js";
 
@@ -88,6 +89,52 @@ describe("lock", () => {
       const lock = await readLock(tmp);
       expect(lock?.source).toBe("/new");
       expect(lock?.items).toHaveLength(1);
+    });
+  });
+
+  describe("writeLock with link mode", () => {
+    const linkItems: LinkItem[] = [
+      {
+        path: ".claude/",
+        type: "directory",
+        provider: "claude",
+        target: "../source/.claude/",
+      },
+      {
+        path: "CLAUDE.md",
+        type: "file",
+        provider: "claude",
+        target: "../source/CLAUDE.md",
+      },
+    ];
+
+    it("writes mode=link in lock file", async () => {
+      await writeLock(tmp, "/src", linkItems, "link");
+      const lock = await readLock(tmp);
+      expect(lock?.mode).toBe("link");
+    });
+
+    it("stores target instead of hash for link items", async () => {
+      await writeLock(tmp, "/src", linkItems, "link");
+      const lock = await readLock(tmp);
+      expect(lock?.items[0].target).toBe("../source/.claude/");
+      expect(lock?.items[0].hash).toBeUndefined();
+      expect(lock?.items[1].target).toBe("../source/CLAUDE.md");
+      expect(lock?.items[1].hash).toBeUndefined();
+    });
+
+    it("round-trips link lock file correctly", async () => {
+      await writeLock(tmp, "/src", linkItems, "link");
+      const lock = await readLock(tmp);
+      expect(lock?.version).toBe(1);
+      expect(lock?.mode).toBe("link");
+      expect(lock?.items).toHaveLength(2);
+      expect(lock?.items[0]).toMatchObject({
+        path: ".claude/",
+        type: "directory",
+        provider: "claude",
+        target: "../source/.claude/",
+      });
     });
   });
 });

@@ -1,5 +1,5 @@
 {
-  "name": "@leokun/aisync",
+  "name": "@leokun-wasabee/aisync",
   "version": "0.2.1",
   "description": "Sync AI tool configurations between git worktrees",
   "type": "module",

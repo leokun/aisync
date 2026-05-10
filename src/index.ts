@@ -1,5 +1,7 @@
 import { Command } from "commander";
+import { clean } from "./commands/clean.js";
 import { copy } from "./commands/copy.js";
+import { doctor } from "./commands/doctor.js";
 import { hookInstall, hookRemove } from "./commands/hook.js";
 import { init } from "./commands/init.js";
 import { link } from "./commands/link.js";
@@ -14,7 +16,7 @@ const program = new Command();
 program
   .name("aisync")
   .description("Sync AI tool configurations between git worktrees")
-  .version("0.6.0");
+  .version("0.7.0");
 
 program
   .command("copy")
@@ -93,6 +95,22 @@ hookCmd
   .command("remove")
   .description("Remove post-checkout hook")
   .action(() => hookRemove("."));
+
+program
+  .command("doctor")
+  .description("Diagnose sync state vs aisync-lock.json")
+  .option("--json", "Output report as JSON", false)
+  .option("-v, --verbose", "Show detailed output", false)
+  .action(doctor);
+
+program
+  .command("clean")
+  .description("Remove synced items and aisync-lock.json from worktree")
+  .option("--all", "Clean all worktrees that have a lock file", false)
+  .option("-d, --dry-run", "Show what would be removed", false)
+  .option("-f, --force", "Skip confirmation prompt", false)
+  .option("-v, --verbose", "Show detailed output", false)
+  .action(clean);
 
 if (process.argv.length <= 2 && isTTY()) {
   runWizard().catch((err) => {

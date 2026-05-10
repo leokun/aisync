@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildProviders,
   filterProviders,
   getProvider,
   getProviderNames,
@@ -118,6 +119,42 @@ describe("providers registry", () => {
     it("treats empty only array as no filter", () => {
       const result = filterProviders([]);
       expect(result).toHaveLength(8);
+    });
+
+    it("filters within a custom registry", () => {
+      const custom = buildProviders([
+        { name: "my-tool", label: "My Tool", paths: [".mytool/"] },
+      ]);
+      const result = filterProviders(["my-tool"], undefined, custom);
+      expect(result).toHaveLength(1);
+      expect(result[0].name).toBe("my-tool");
+    });
+  });
+
+  describe("buildProviders", () => {
+    it("returns builtin providers when no custom is given", () => {
+      const result = buildProviders();
+      expect(result).toHaveLength(8);
+    });
+
+    it("appends a new custom provider before cross-tool", () => {
+      const result = buildProviders([
+        { name: "my-tool", label: "My Tool", paths: [".mytool/"] },
+      ]);
+      expect(result).toHaveLength(9);
+      const names = result.map((p) => p.name);
+      expect(names).toContain("my-tool");
+      expect(names[names.length - 1]).toBe("cross-tool");
+    });
+
+    it("overrides a builtin provider with same name", () => {
+      const result = buildProviders([
+        { name: "claude", label: "My Claude", paths: [".custom-claude/"] },
+      ]);
+      expect(result).toHaveLength(8);
+      const claude = result.find((p) => p.name === "claude");
+      expect(claude?.label).toBe("My Claude");
+      expect(claude?.paths).toEqual([".custom-claude/"]);
     });
   });
 });

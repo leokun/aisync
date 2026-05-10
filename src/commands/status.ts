@@ -1,11 +1,14 @@
 import { resolve } from "node:path";
+import { readConfig } from "../core/config.js";
 import { getWorktrees, isGitRepo } from "../core/git.js";
 import { scanProviders } from "../core/scanner.js";
-import { providers } from "../providers/registry.js";
+import { buildProviders } from "../providers/registry.js";
 import * as log from "../utils/logger.js";
 
 export async function status(): Promise<void> {
   const dir = resolve(".");
+  const config = await readConfig(dir);
+  const providers = buildProviders(config?.providers);
 
   log.header("status");
 

@@ -22,10 +22,11 @@ export async function resolveSourceDest(
   sourceArg: string | undefined,
   destArg: string | undefined,
   commandName: string,
+  configSource?: string,
 ): Promise<ResolvedPaths | null> {
   if (destArg) {
     return {
-      source: resolve(sourceArg ?? "."),
+      source: resolve(sourceArg ?? configSource ?? "."),
       destination: resolve(destArg),
       fromLock: false,
     };
@@ -41,7 +42,7 @@ export async function resolveSourceDest(
       };
     }
     return {
-      source: resolve("."),
+      source: resolve(configSource ?? "."),
       destination: resolve(sourceArg),
       fromLock: false,
     };

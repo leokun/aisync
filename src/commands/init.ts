@@ -1,7 +1,8 @@
 import { resolve } from "node:path";
 import { bootstrap } from "../core/bootstrapper.js";
+import { readConfig } from "../core/config.js";
 import { scanProviders } from "../core/scanner.js";
-import { filterProviders } from "../providers/registry.js";
+import { buildProviders, filterProviders } from "../providers/registry.js";
 import * as log from "../utils/logger.js";
 import { isTTY } from "../utils/platform.js";
 import { selectProviders } from "../utils/prompt.js";
@@ -13,9 +14,13 @@ interface InitOptions {
 
 export async function init(options: InitOptions): Promise<void> {
   const dir = resolve(".");
-  let providers = filterProviders(options.only);
+  const config = await readConfig(dir);
+  const registry = buildProviders(config?.providers);
 
-  const noFilter = !options.only?.length;
+  const only = options.only ?? config?.only;
+  let providers = filterProviders(only, undefined, registry);
+
+  const noFilter = !only?.length;
   const wantsInteractive = options.interactive || (noFilter && isTTY());
   if (wantsInteractive) {
     const selectable = providers.filter((p) => p.name !== "cross-tool");
@@ -60,7 +65,9 @@ export async function init(options: InitOptions): Promise<void> {
   console.log();
 
   // Bootstrap missing providers
-  const result = await bootstrap(dir, scanResults);
+  const result = await bootstrap(dir, scanResults, {
+    templates: config?.templates,
+  });
 
   if (result.generated.length === 0) {
     console.log("  Nothing to generate - all providers already configured.");

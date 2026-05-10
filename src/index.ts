@@ -10,7 +10,7 @@ const program = new Command();
 program
   .name("aisync")
   .description("Sync AI tool configurations between git worktrees")
-  .version("0.3.0");
+  .version("0.4.0");
 
 program
   .command("copy")

@@ -14,6 +14,14 @@ vi.mock("../../../src/providers/registry.js", () => ({
     { name: "claude", label: "Claude Code", paths: [".claude/", "CLAUDE.md"] },
     { name: "cursor", label: "Cursor", paths: [".cursor/"] },
   ],
+  buildProviders: vi.fn(() => [
+    { name: "claude", label: "Claude Code", paths: [".claude/", "CLAUDE.md"] },
+    { name: "cursor", label: "Cursor", paths: [".cursor/"] },
+  ]),
+}));
+
+vi.mock("../../../src/core/config.js", () => ({
+  readConfig: vi.fn(async () => null),
 }));
 
 vi.mock("../../../src/utils/logger.js", () => ({

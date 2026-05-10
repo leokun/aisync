@@ -1,7 +1,8 @@
+import { readConfig } from "../core/config.js";
 import { linkProviders } from "../core/linker.js";
 import { writeLock } from "../core/lock.js";
 import { scanProviders } from "../core/scanner.js";
-import { filterProviders } from "../providers/registry.js";
+import { buildProviders, filterProviders } from "../providers/registry.js";
 import * as log from "../utils/logger.js";
 import { isTTY } from "../utils/platform.js";
 import { selectProviders } from "../utils/prompt.js";
@@ -14,19 +15,30 @@ export async function link(
 ): Promise<void> {
   log.setVerbose(options.verbose);
 
-  const resolved = await resolveSourceDest(sourceArg, destArg, "link");
+  const config = await readConfig(".");
+  const registry = buildProviders(config?.providers);
+
+  const resolved = await resolveSourceDest(
+    sourceArg,
+    destArg,
+    "link",
+    config?.source,
+  );
   if (!resolved) return;
 
   const { source, destination, fromLock } = resolved;
   if (!(await validateSource(source))) return;
 
-  const providers = filterProviders(options.only, options.exclude);
+  const only = options.only ?? config?.only;
+  const exclude = options.exclude ?? config?.exclude;
+
+  const providers = filterProviders(only, exclude, registry);
   const scanResults = await scanProviders(source, providers);
   let activeProviders = providers.filter(
     (_, i) => scanResults[i].foundPaths.length > 0,
   );
 
-  const noFilter = !options.only?.length && !options.exclude?.length;
+  const noFilter = !only?.length && !exclude?.length;
   const wantsInteractive = options.interactive || (noFilter && isTTY());
   if (wantsInteractive && activeProviders.length > 1) {
     activeProviders = await selectProviders(activeProviders);

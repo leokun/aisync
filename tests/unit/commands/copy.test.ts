@@ -15,6 +15,11 @@ vi.mock("../../../src/core/scanner.js", () => ({
 
 vi.mock("../../../src/providers/registry.js", () => ({
   filterProviders: vi.fn(),
+  buildProviders: vi.fn(() => []),
+}));
+
+vi.mock("../../../src/core/config.js", () => ({
+  readConfig: vi.fn(async () => null),
 }));
 
 vi.mock("../../../src/utils/fs.js", () => ({

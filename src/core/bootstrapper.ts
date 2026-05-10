@@ -8,7 +8,11 @@ export interface BootstrapResult {
   generated: { provider: Provider; paths: string[] }[];
 }
 
-const templates: Record<
+export interface BootstrapOptions {
+  templates?: Record<string, Record<string, string>>;
+}
+
+const defaultTemplates: Record<
   string,
   (baseFiles: string[]) => Record<string, string>
 > = {
@@ -52,20 +56,30 @@ const templates: Record<
 export async function bootstrap(
   dir: string,
   scanResults: ScanResult[],
+  options: BootstrapOptions = {},
 ): Promise<BootstrapResult> {
   const baseFiles =
     scanResults.find((r) => r.provider.name === "cross-tool")?.foundPaths ?? [];
 
+  const overrides = options.templates ?? {};
   const generated: BootstrapResult["generated"] = [];
 
   for (const result of scanResults) {
     if (result.provider.name === "cross-tool") continue;
     if (result.foundPaths.length > 0) continue;
 
-    const template = templates[result.provider.name];
-    if (!template) continue;
+    const override = overrides[result.provider.name];
+    const template = defaultTemplates[result.provider.name];
 
-    const files = template(baseFiles);
+    let files: Record<string, string> | undefined;
+    if (override) {
+      files = override;
+    } else if (template) {
+      files = template(baseFiles);
+    } else {
+      continue;
+    }
+
     const paths: string[] = [];
 
     for (const [relativePath, content] of Object.entries(files)) {

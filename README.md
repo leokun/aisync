@@ -55,7 +55,14 @@ npx aisync list worktrees
 | Cursor | `.cursor/`, `.cursorrules` |
 | OpenAI Codex | `.codex/` |
 | GitHub Copilot | `.github/copilot/` |
+| Windsurf | `.windsurf/`, `.windsurfrules` |
+| Cline | `.clinerules` |
+| Aider | `.aider.conf.yml`, `CONVENTIONS.md` |
 | Cross-tool | `AGENTS.md`, `.agents/` |
+
+### Interactive selection
+
+When you run `copy`, `link`, or `init` in a TTY without `--only` or `--exclude`, aisync prompts you to pick which providers to sync. Pass `--only` / `--exclude` to skip the prompt, or use `-i, --interactive` to force it.
 
 ## Options
 
@@ -65,6 +72,7 @@ npx aisync list worktrees
 --dry-run             Show what would happen without doing it
 --force               Overwrite existing files
 --verbose             Detailed output
+--interactive, -i     Force interactive provider selection
 ```
 
 ## Why
@@ -82,10 +90,11 @@ npx aisync copy "$CONDUCTOR_MAIN_WORKTREE" "$(pwd)" --force
 
 ## Roadmap
 
-- **v0.1.0** - Copy + init (current)
+- **v0.1.0** - Copy + init
 - **v0.2.0** - Symlink mode (`aisync link`)
-- **v0.3.0** - More providers (Windsurf, Cline, Aider)
+- **v0.3.0** - More providers (Windsurf, Cline, Aider) + interactive selection (current)
 - **v0.4.0** - Config file (`.aisyncrc`)
+- **v0.5.0** - Full interactive wizard
 - **v0.6.0** - File watching + git hooks
 - **v0.7.0** - Diagnostics (`aisync doctor`)
 

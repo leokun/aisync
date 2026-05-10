@@ -3,14 +3,31 @@ import { bootstrap } from "../core/bootstrapper.js";
 import { scanProviders } from "../core/scanner.js";
 import { filterProviders } from "../providers/registry.js";
 import * as log from "../utils/logger.js";
+import { isTTY } from "../utils/platform.js";
+import { selectProviders } from "../utils/prompt.js";
 
 interface InitOptions {
   only?: string[];
+  interactive?: boolean;
 }
 
 export async function init(options: InitOptions): Promise<void> {
   const dir = resolve(".");
-  const providers = filterProviders(options.only);
+  let providers = filterProviders(options.only);
+
+  const noFilter = !options.only?.length;
+  const wantsInteractive = options.interactive || (noFilter && isTTY());
+  if (wantsInteractive) {
+    const selectable = providers.filter((p) => p.name !== "cross-tool");
+    if (selectable.length > 1) {
+      const picked = await selectProviders(selectable);
+      const pickedNames = new Set(picked.map((p) => p.name));
+      providers = providers.filter(
+        (p) => p.name === "cross-tool" || pickedNames.has(p.name),
+      );
+    }
+  }
+
   const scanResults = await scanProviders(dir, providers);
 
   log.header("init");

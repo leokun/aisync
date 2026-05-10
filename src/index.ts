@@ -10,7 +10,7 @@ const program = new Command();
 program
   .name("aisync")
   .description("Sync AI tool configurations between git worktrees")
-  .version("0.2.0");
+  .version("0.3.0");
 
 program
   .command("copy")
@@ -22,6 +22,7 @@ program
   .option("-d, --dry-run", "Show what would be done without doing it", false)
   .option("-f, --force", "Overwrite existing files in destination", false)
   .option("-v, --verbose", "Show detailed output", false)
+  .option("-i, --interactive", "Force interactive provider selection", false)
   .action(copy);
 
 program
@@ -34,12 +35,14 @@ program
   .option("-d, --dry-run", "Show what would be done without doing it", false)
   .option("-f, --force", "Overwrite existing files/links in destination", false)
   .option("-v, --verbose", "Show detailed output", false)
+  .option("-i, --interactive", "Force interactive provider selection", false)
   .action(link);
 
 program
   .command("init")
   .description("Bootstrap AI provider configs for the current project")
   .option("-o, --only <provider...>", "Only init these providers")
+  .option("-i, --interactive", "Force interactive provider selection", false)
   .action(init);
 
 program

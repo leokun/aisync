@@ -8,8 +8,8 @@ import {
 
 describe("providers registry", () => {
   describe("providers array", () => {
-    it("contains 5 providers", () => {
-      expect(providers).toHaveLength(5);
+    it("contains 8 providers", () => {
+      expect(providers).toHaveLength(8);
     });
 
     it("each provider has name, label, and non-empty paths", () => {
@@ -40,6 +40,21 @@ describe("providers registry", () => {
       expect(copilot?.paths).toEqual([".github/copilot/"]);
     });
 
+    it("windsurf has correct paths", () => {
+      const windsurf = providers.find((p) => p.name === "windsurf");
+      expect(windsurf?.paths).toEqual([".windsurf/", ".windsurfrules"]);
+    });
+
+    it("cline has correct paths", () => {
+      const cline = providers.find((p) => p.name === "cline");
+      expect(cline?.paths).toEqual([".clinerules"]);
+    });
+
+    it("aider has correct paths", () => {
+      const aider = providers.find((p) => p.name === "aider");
+      expect(aider?.paths).toEqual([".aider.conf.yml", "CONVENTIONS.md"]);
+    });
+
     it("cross-tool has correct paths", () => {
       const crossTool = providers.find((p) => p.name === "cross-tool");
       expect(crossTool?.paths).toEqual(["AGENTS.md", ".agents/"]);
@@ -58,20 +73,23 @@ describe("providers registry", () => {
   });
 
   describe("getProviderNames", () => {
-    it("returns all 5 names", () => {
+    it("returns all 8 names", () => {
       const names = getProviderNames();
-      expect(names).toHaveLength(5);
+      expect(names).toHaveLength(8);
       expect(names).toContain("claude");
       expect(names).toContain("cursor");
       expect(names).toContain("codex");
       expect(names).toContain("copilot");
+      expect(names).toContain("windsurf");
+      expect(names).toContain("cline");
+      expect(names).toContain("aider");
       expect(names).toContain("cross-tool");
     });
   });
 
   describe("filterProviders", () => {
     it("returns all providers with no args", () => {
-      expect(filterProviders()).toHaveLength(5);
+      expect(filterProviders()).toHaveLength(8);
     });
 
     it("filters by only list", () => {
@@ -82,7 +100,7 @@ describe("providers registry", () => {
 
     it("excludes by exclude list", () => {
       const result = filterProviders(undefined, ["cross-tool"]);
-      expect(result).toHaveLength(4);
+      expect(result).toHaveLength(7);
       expect(result.map((p) => p.name)).not.toContain("cross-tool");
     });
 
@@ -99,7 +117,7 @@ describe("providers registry", () => {
 
     it("treats empty only array as no filter", () => {
       const result = filterProviders([]);
-      expect(result).toHaveLength(5);
+      expect(result).toHaveLength(8);
     });
   });
 });

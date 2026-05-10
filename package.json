@@ -1,6 +1,6 @@
 {
   "name": "@leokun-wasabee/aisync",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Sync AI tool configurations between git worktrees",
   "type": "module",
   "bin": {
@@ -28,6 +28,9 @@
     "cursor",
     "codex",
     "copilot",
+    "windsurf",
+    "cline",
+    "aider",
     "cli"
   ],
   "author": "Léo Stewart",
@@ -40,6 +43,7 @@
     "node": ">=22"
   },
   "dependencies": {
+    "@clack/prompts": "^1.3.0",
     "commander": "^14.0.3",
     "picocolors": "^1.1.1"
   },

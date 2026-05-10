@@ -3,6 +3,8 @@ import { writeLock } from "../core/lock.js";
 import { scanProviders } from "../core/scanner.js";
 import { filterProviders } from "../providers/registry.js";
 import * as log from "../utils/logger.js";
+import { isTTY } from "../utils/platform.js";
+import { selectProviders } from "../utils/prompt.js";
 import { resolveSourceDest, type SyncOptions, validateSource } from "./sync.js";
 
 export async function copy(
@@ -20,9 +22,15 @@ export async function copy(
 
   const providers = filterProviders(options.only, options.exclude);
   const scanResults = await scanProviders(source, providers);
-  const activeProviders = providers.filter(
+  let activeProviders = providers.filter(
     (_, i) => scanResults[i].foundPaths.length > 0,
   );
+
+  const noFilter = !options.only?.length && !options.exclude?.length;
+  const wantsInteractive = options.interactive || (noFilter && isTTY());
+  if (wantsInteractive && activeProviders.length > 1) {
+    activeProviders = await selectProviders(activeProviders);
+  }
 
   const dryLabel = options.dryRun ? " (dry run)" : "";
   log.header(`copy${dryLabel}`);

@@ -32,6 +32,21 @@ const templates: Record<
       ? "# Copilot\n\n# See AGENTS.md for shared agent configuration\n"
       : "# Copilot\n",
   }),
+  windsurf: (baseFiles) => ({
+    ".windsurf/rules/main.md": baseFiles.includes("AGENTS.md")
+      ? "# Windsurf rules\n\n# See AGENTS.md for shared agent configuration\n"
+      : "# Windsurf rules\n",
+  }),
+  cline: (baseFiles) => ({
+    ".clinerules/main.md": baseFiles.includes("AGENTS.md")
+      ? "# Cline rules\n\n# See AGENTS.md for shared agent configuration\n"
+      : "# Cline rules\n",
+  }),
+  aider: (baseFiles) => ({
+    ".aider.conf.yml": baseFiles.includes("AGENTS.md")
+      ? "# Aider config\nread:\n  - AGENTS.md\n"
+      : "# Aider config\n",
+  }),
 };
 
 export async function bootstrap(

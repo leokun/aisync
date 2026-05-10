@@ -1,8 +1,11 @@
+import { aider } from "./aider.js";
 import { claude } from "./claude.js";
+import { cline } from "./cline.js";
 import { codex } from "./codex.js";
 import { copilot } from "./copilot.js";
 import { crossTool } from "./cross-tool.js";
 import { cursor } from "./cursor.js";
+import { windsurf } from "./windsurf.js";
 
 export interface Provider {
   name: string;
@@ -15,6 +18,9 @@ export const providers: Provider[] = [
   cursor,
   codex,
   copilot,
+  windsurf,
+  cline,
+  aider,
   crossTool,
 ];
 

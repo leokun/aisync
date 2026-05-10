@@ -9,6 +9,7 @@ export interface SyncOptions {
   dryRun: boolean;
   force: boolean;
   verbose: boolean;
+  interactive?: boolean;
 }
 
 export interface ResolvedPaths {

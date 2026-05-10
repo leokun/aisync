@@ -33,7 +33,7 @@ git worktree remove ../aisync-test   # cleanup
 
 ## Architecture
 
-CLI tool that syncs AI tool configurations (.claude/, .cursor/, .codex/, etc.) between git worktrees of the same repo.
+CLI tool that syncs AI tool configurations (.claude/, .cursor/, .codex/, .github/copilot/, .windsurf/, .clinerules, .aider.conf.yml, AGENTS.md, etc.) between git worktrees of the same repo.
 
 **Layer structure:**
 - `src/index.ts` - CLI entry point wiring Commander subcommands

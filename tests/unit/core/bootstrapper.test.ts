@@ -31,6 +31,21 @@ const copilot: Provider = {
   label: "GitHub Copilot",
   paths: [".github/copilot/"],
 };
+const windsurf: Provider = {
+  name: "windsurf",
+  label: "Windsurf",
+  paths: [".windsurf/", ".windsurfrules"],
+};
+const cline: Provider = {
+  name: "cline",
+  label: "Cline",
+  paths: [".clinerules"],
+};
+const aider: Provider = {
+  name: "aider",
+  label: "Aider",
+  paths: [".aider.conf.yml", "CONVENTIONS.md"],
+};
 const crossTool: Provider = {
   name: "cross-tool",
   label: "Cross-tool",
@@ -83,6 +98,52 @@ describe("bootstrapper", () => {
     expect(await exists(join(tmp, ".github/copilot/instructions.md"))).toBe(
       true,
     );
+  });
+
+  it("generates .windsurf/rules/main.md for missing windsurf", async () => {
+    const scans = [makeScan(crossTool, []), makeScan(windsurf, [])];
+    const result = await bootstrap(tmp, scans);
+    expect(result.generated[0].paths).toContain(".windsurf/rules/main.md");
+    expect(await exists(join(tmp, ".windsurf/rules/main.md"))).toBe(true);
+  });
+
+  it("generates .clinerules/main.md for missing cline", async () => {
+    const scans = [makeScan(crossTool, []), makeScan(cline, [])];
+    const result = await bootstrap(tmp, scans);
+    expect(result.generated[0].paths).toContain(".clinerules/main.md");
+    expect(await exists(join(tmp, ".clinerules/main.md"))).toBe(true);
+  });
+
+  it("generates .aider.conf.yml for missing aider", async () => {
+    const scans = [makeScan(crossTool, []), makeScan(aider, [])];
+    const result = await bootstrap(tmp, scans);
+    expect(result.generated[0].paths).toContain(".aider.conf.yml");
+    expect(await exists(join(tmp, ".aider.conf.yml"))).toBe(true);
+  });
+
+  it("aider config references AGENTS.md via read: when present", async () => {
+    const scans = [makeScan(crossTool, ["AGENTS.md"]), makeScan(aider, [])];
+    await bootstrap(tmp, scans);
+    const content = await readFile(join(tmp, ".aider.conf.yml"), "utf-8");
+    expect(content).toContain("AGENTS.md");
+    expect(content).toContain("read:");
+  });
+
+  it("windsurf rules reference AGENTS.md when present", async () => {
+    const scans = [makeScan(crossTool, ["AGENTS.md"]), makeScan(windsurf, [])];
+    await bootstrap(tmp, scans);
+    const content = await readFile(
+      join(tmp, ".windsurf/rules/main.md"),
+      "utf-8",
+    );
+    expect(content).toContain("AGENTS.md");
+  });
+
+  it("cline rules reference AGENTS.md when present", async () => {
+    const scans = [makeScan(crossTool, ["AGENTS.md"]), makeScan(cline, [])];
+    await bootstrap(tmp, scans);
+    const content = await readFile(join(tmp, ".clinerules/main.md"), "utf-8");
+    expect(content).toContain("AGENTS.md");
   });
 
   it("skips cross-tool provider", async () => {

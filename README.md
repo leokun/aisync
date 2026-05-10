@@ -8,16 +8,29 @@ AI tools store their configs in the working tree (`.claude/`, `.cursor/`, `CLAUD
 
 ## Install
 
+One-shot via npx:
+
 ```bash
-npx aisync
+npx @leokun-wasabee/aisync
 ```
+
+Or install globally for a shorter command:
+
+```bash
+pnpm add -g @leokun-wasabee/aisync
+# or: npm install -g @leokun-wasabee/aisync
+
+aisync --version
+```
+
+The examples below use the global `aisync` command. Replace with `npx @leokun-wasabee/aisync` if you prefer not to install globally.
 
 ## Usage
 
 ### Copy configs to a new worktree
 
 ```bash
-npx aisync copy . ../feature-auth
+aisync copy . ../feature-auth
 ```
 
 Copies all detected AI provider configs from the current worktree to the target.
@@ -26,7 +39,7 @@ Copies all detected AI provider configs from the current worktree to the target.
 
 ```bash
 cd ../feature-auth
-npx aisync copy
+aisync copy
 ```
 
 Uses the `aisync-lock.json` saved from the first copy to re-sync from the original source.
@@ -34,7 +47,7 @@ Uses the `aisync-lock.json` saved from the first copy to re-sync from the origin
 ### Bootstrap missing provider configs
 
 ```bash
-npx aisync init
+aisync init
 ```
 
 Detects your cross-tool base (`AGENTS.md`, `.agents/`) and generates missing provider-specific configs that reference it.
@@ -42,10 +55,61 @@ Detects your cross-tool base (`AGENTS.md`, `.agents/`) and generates missing pro
 ### Check what's detected
 
 ```bash
-npx aisync status
-npx aisync list providers
-npx aisync list worktrees
+aisync status
+aisync list providers
+aisync list worktrees
 ```
+
+### Symlink instead of copy
+
+```bash
+aisync link . ../feature-auth
+```
+
+Creates relative symlinks instead of copying files. Edits in the source are reflected immediately in the destination.
+
+### Watch and re-sync automatically
+
+```bash
+aisync watch
+```
+
+Watches the source worktree and re-syncs to all other worktrees on change. Useful when iterating on shared configs.
+
+### Auto-sync on `git checkout`
+
+```bash
+aisync hook install
+aisync hook remove
+```
+
+Installs (or removes) a `post-checkout` git hook that runs `aisync copy` after switching branches or creating a new worktree.
+
+### Diagnose sync state
+
+```bash
+aisync doctor
+```
+
+Compares the destination's `aisync-lock.json` against the source and the local files. Reports per-item status:
+
+- `synced` : everything matches the lock
+- `stale` : source has changed since the last sync
+- `drift` : destination has local edits
+- `conflict` : both source and destination changed
+- `missing-source` / `missing-dest` : a tracked path no longer exists
+
+Use `--json` for machine-readable output. Exit code is `1` when conflicts are present (CI-friendly).
+
+### Clean a synced worktree
+
+```bash
+aisync clean              # remove items + lock from current worktree
+aisync clean --dry-run    # preview
+aisync clean --all        # clean every worktree that has a lock
+```
+
+Removes files and folders listed in `aisync-lock.json`, then deletes the lock file itself.
 
 ## Supported providers
 
@@ -85,18 +149,18 @@ This scales poorly, especially with agent orchestrators (Superset, Conductor, Em
 
 ```bash
 # .conductor/setup.sh
-npx aisync copy "$CONDUCTOR_MAIN_WORKTREE" "$(pwd)" --force
+aisync copy "$CONDUCTOR_MAIN_WORKTREE" "$(pwd)" --force
 ```
 
 ## Roadmap
 
 - **v0.1.0** - Copy + init
 - **v0.2.0** - Symlink mode (`aisync link`)
-- **v0.3.0** - More providers (Windsurf, Cline, Aider) + interactive selection (current)
+- **v0.3.0** - More providers (Windsurf, Cline, Aider) + interactive selection
 - **v0.4.0** - Config file (`.aisyncrc`)
 - **v0.5.0** - Full interactive wizard
 - **v0.6.0** - File watching + git hooks
-- **v0.7.0** - Diagnostics (`aisync doctor`)
+- **v0.7.0** - Maintenance: `doctor` + `clean` (current)
 
 ## License
 

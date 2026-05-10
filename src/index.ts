@@ -4,13 +4,15 @@ import { init } from "./commands/init.js";
 import { link } from "./commands/link.js";
 import { listProviders, listWorktrees } from "./commands/list.js";
 import { status } from "./commands/status.js";
+import { runWizard } from "./commands/wizard.js";
+import { isTTY } from "./utils/platform.js";
 
 const program = new Command();
 
 program
   .name("aisync")
   .description("Sync AI tool configurations between git worktrees")
-  .version("0.4.0");
+  .version("0.5.0");
 
 program
   .command("copy")
@@ -64,4 +66,11 @@ listCmd
   .description("List git worktrees for current repository")
   .action(listWorktrees);
 
-program.parse();
+if (process.argv.length <= 2 && isTTY()) {
+  runWizard().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+} else {
+  program.parse();
+}

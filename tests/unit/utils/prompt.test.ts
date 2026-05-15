@@ -117,7 +117,7 @@ describe("selectProviders", () => {
     await expect(selectProviders([claude, cursor])).rejects.toThrow(
       "__exit_0__",
     );
-    expect(mockCancel).toHaveBeenCalledWith("Annulé");
+    expect(mockCancel).toHaveBeenCalledWith("Cancelled");
     exitSpy.mockRestore();
   });
 });

@@ -13,7 +13,7 @@ type WizardCommand = "copy" | "link" | "init" | "status" | "list";
 
 function abortIfCancel<T>(value: T | symbol): T {
   if (isCancel(value)) {
-    cancel("Annulé");
+    cancel("Cancelled");
     process.exit(0);
   }
   return value as T;
@@ -32,25 +32,25 @@ export async function runWizard(): Promise<void> {
 
   const command = abortIfCancel(
     await select<WizardCommand>({
-      message: "Que veux-tu faire ?",
+      message: "What do you want to do?",
       options: [
         {
-          label: "copy   - Copier les configs vers un autre worktree",
+          label: "copy   - Copy configs to another worktree",
           value: "copy",
         },
         {
-          label: "link   - Symlinker les configs vers un autre worktree",
+          label: "link   - Symlink configs to another worktree",
           value: "link",
         },
         {
-          label: "init   - Bootstrapper les configs du projet courant",
+          label: "init   - Bootstrap configs for the current project",
           value: "init",
         },
         {
-          label: "status - Inspecter les providers et worktrees",
+          label: "status - Inspect providers and worktrees",
           value: "status",
         },
-        { label: "list   - Lister providers ou worktrees", value: "list" },
+        { label: "list   - List providers or worktrees", value: "list" },
       ],
     }),
   );
@@ -68,7 +68,7 @@ export async function runWizard(): Promise<void> {
   if (command === "list") {
     const target = abortIfCancel(
       await select<"providers" | "worktrees">({
-        message: "Lister quoi ?",
+        message: "List what?",
         options: [
           { label: "providers", value: "providers" },
           { label: "worktrees", value: "worktrees" },
@@ -91,7 +91,7 @@ async function runSyncWizard(command: "copy" | "link"): Promise<void> {
   const cwd = resolve(".");
   const source = abortIfCancel(
     await text({
-      message: "Source (worktree à synchroniser depuis) ?",
+      message: "Source (worktree to sync from)?",
       placeholder: ".",
       defaultValue: ".",
     }),
@@ -100,7 +100,7 @@ async function runSyncWizard(command: "copy" | "link"): Promise<void> {
 
   const destinations = await pickDestinations(cwd, sourceResolved);
   if (destinations.length === 0) {
-    log.warn("Aucune destination sélectionnée.");
+    log.warn("No destination selected.");
     return;
   }
 
@@ -128,13 +128,13 @@ async function pickDestinations(
   if (worktrees.length > 0) {
     const picked = abortIfCancel(
       await multiselect<string>({
-        message: "Destinations ? (espace pour cocher)",
+        message: "Destinations? (space to toggle)",
         options: [
           ...worktrees.map((w) => ({
             label: w.branch ? `${w.path} (${w.branch})` : w.path,
             value: w.path,
           })),
-          { label: "Saisir un chemin manuellement…", value: "__manual__" },
+          { label: "Enter a path manually...", value: "__manual__" },
         ],
         required: true,
       }),
@@ -154,11 +154,11 @@ async function pickDestinations(
 async function promptManualDestinations(): Promise<string[]> {
   const raw = abortIfCancel(
     await text({
-      message: "Chemin(s) de destination (séparés par des virgules)",
+      message: "Destination path(s) (comma-separated)",
       placeholder: "../feature-branch",
       validate: (value) => {
         if (!value || value.trim().length === 0) {
-          return "Saisis au moins une destination";
+          return "Enter at least one destination";
         }
       },
     }),

@@ -9,14 +9,14 @@ export async function selectProviders(
   if (detected.length <= 1) return detected;
 
   const result = await multiselect({
-    message: "Quels providers synchroniser ?",
+    message: "Which providers to sync?",
     options: detected.map((p) => ({ label: p.label, value: p.name })),
     initialValues: detected.map((p) => p.name),
     required: true,
   });
 
   if (isCancel(result)) {
-    cancel("Annulé");
+    cancel("Cancelled");
     process.exit(0);
   }
 

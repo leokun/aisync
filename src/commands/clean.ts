@@ -98,7 +98,7 @@ async function confirmCleanup(count: number): Promise<boolean> {
       : "Remove synced items and aisync-lock.json?";
   const answer = await confirm({ message, initialValue: false });
   if (isCancel(answer)) {
-    cancel("Annulé");
+    cancel("Cancelled");
     return false;
   }
   if (!answer) {

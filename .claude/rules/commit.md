@@ -28,9 +28,9 @@ Format: `{gitmoji} [{domain}] {short commit message}`
 
 ## Domain
 
-Le domaine correspond au module ou à la zone du code impactée : `cli`, `core`, `providers`, `utils`, `tests`, `config`, `docs`, `ci`.
+The domain refers to the module or area of code impacted: `cli`, `core`, `providers`, `utils`, `tests`, `config`, `docs`, `ci`.
 
-## Exemples
+## Examples
 
 ```
 ✨ [cli] add copy command with dry-run support
@@ -44,7 +44,7 @@ Le domaine correspond au module ou à la zone du code impactée : `cli`, `core`,
 
 ## Rules
 
-- Message en anglais
-- Pas de point final
-- Première lettre du message en minuscule
-- Court et descriptif (< 72 chars au total)
+- Message in English
+- No trailing period
+- First letter of message in lowercase
+- Short and descriptive (< 72 chars total)

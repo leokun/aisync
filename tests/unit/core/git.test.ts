@@ -7,7 +7,12 @@ vi.mock("node:child_process", () => ({
 
 import type { ChildProcess } from "node:child_process";
 import { execFile } from "node:child_process";
-import { getRepoRoot, getWorktrees, isGitRepo } from "../../../src/core/git.js";
+import {
+  findCandidateSources,
+  getRepoRoot,
+  getWorktrees,
+  isGitRepo,
+} from "../../../src/core/git.js";
 
 const mockExecFile = vi.mocked(execFile);
 
@@ -116,6 +121,58 @@ describe("git", () => {
       setupExecFile("worktree /path\nbranch refs/heads/feature/my-branch\n");
       const wts = await getWorktrees("/path");
       expect(wts[0].branch).toBe("feature/my-branch");
+    });
+  });
+
+  describe("findCandidateSources", () => {
+    it("excludes bare worktrees", async () => {
+      setupExecFile(
+        [
+          "worktree /path/to/bare",
+          "bare",
+          "",
+          "worktree /path/to/main",
+          "branch refs/heads/main",
+          "",
+        ].join("\n"),
+      );
+      const result = await findCandidateSources("/some/other");
+      expect(result).toHaveLength(1);
+      expect(result[0].path).toBe("/path/to/main");
+    });
+
+    it("excludes the worktree matching cwd", async () => {
+      setupExecFile(
+        [
+          "worktree /path/to/main",
+          "branch refs/heads/main",
+          "",
+          "worktree /path/to/feature",
+          "branch refs/heads/feature",
+          "",
+        ].join("\n"),
+      );
+      const result = await findCandidateSources("/path/to/feature");
+      expect(result).toHaveLength(1);
+      expect(result[0].path).toBe("/path/to/main");
+    });
+
+    it("returns remaining worktrees", async () => {
+      setupExecFile(
+        [
+          "worktree /path/to/main",
+          "branch refs/heads/main",
+          "",
+          "worktree /path/to/feature-a",
+          "branch refs/heads/feature-a",
+          "",
+          "worktree /path/to/feature-b",
+          "branch refs/heads/feature-b",
+          "",
+        ].join("\n"),
+      );
+      const result = await findCandidateSources("/elsewhere");
+      expect(result).toHaveLength(3);
     });
   });
 });

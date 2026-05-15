@@ -66,6 +66,12 @@ export async function getWorktrees(cwd: string): Promise<Worktree[]> {
   return worktrees;
 }
 
+export async function findCandidateSources(cwd: string): Promise<Worktree[]> {
+  const cwdResolved = resolve(cwd);
+  const worktrees = await getWorktrees(cwd);
+  return worktrees.filter((w) => !w.bare && resolve(w.path) !== cwdResolved);
+}
+
 export async function getRepoRoot(cwd: string): Promise<string> {
   const root = await exec("git", ["rev-parse", "--show-toplevel"], cwd);
   return resolve(root);

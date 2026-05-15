@@ -1,15 +1,16 @@
 import { resolve } from "node:path";
 import { cancel, isCancel, multiselect, select, text } from "@clack/prompts";
-import { getWorktrees, isGitRepo } from "../core/git.js";
+import { findCandidateSources, getWorktrees, isGitRepo } from "../core/git.js";
 import * as log from "../utils/logger.js";
 import { isTTY } from "../utils/platform.js";
 import { copy } from "./copy.js";
 import { init } from "./init.js";
 import { link } from "./link.js";
 import { listProviders, listWorktrees } from "./list.js";
+import { pull } from "./pull.js";
 import { status } from "./status.js";
 
-type WizardCommand = "copy" | "link" | "init" | "status" | "list";
+type WizardCommand = "copy" | "link" | "pull" | "init" | "status" | "list";
 
 function abortIfCancel<T>(value: T | symbol): T {
   if (isCancel(value)) {
@@ -43,6 +44,10 @@ export async function runWizard(): Promise<void> {
           value: "link",
         },
         {
+          label: "pull   - Pull configs from another worktree to here",
+          value: "pull",
+        },
+        {
           label: "init   - Bootstrap configs for the current project",
           value: "init",
         },
@@ -62,6 +67,11 @@ export async function runWizard(): Promise<void> {
 
   if (command === "init") {
     await init({ interactive: true });
+    return;
+  }
+
+  if (command === "pull") {
+    await runPullWizard();
     return;
   }
 
@@ -85,6 +95,72 @@ export async function runWizard(): Promise<void> {
 
   // copy or link
   await runSyncWizard(command);
+}
+
+async function runPullWizard(): Promise<void> {
+  const cwd = resolve(".");
+
+  let candidates: Awaited<ReturnType<typeof findCandidateSources>> = [];
+  if (await isGitRepo(cwd)) {
+    try {
+      candidates = await findCandidateSources(cwd);
+    } catch {
+      candidates = [];
+    }
+  }
+
+  const MANUAL = "__manual__";
+  let chosen: string;
+
+  if (candidates.length === 0) {
+    chosen = abortIfCancel(
+      await text({
+        message: "Source worktree path?",
+        placeholder: "../main",
+        validate: (value) => {
+          if (!value || value.trim().length === 0) {
+            return "Enter a source path";
+          }
+        },
+      }),
+    );
+  } else {
+    const picked = abortIfCancel(
+      await select<string>({
+        message: "Pull from which worktree?",
+        options: [
+          ...candidates.map((c) => ({
+            label: c.branch ? `${c.path} (${c.branch})` : c.path,
+            value: c.path,
+          })),
+          { label: "Enter a path manually...", value: MANUAL },
+        ],
+      }),
+    );
+
+    if (picked === MANUAL) {
+      chosen = abortIfCancel(
+        await text({
+          message: "Source worktree path?",
+          placeholder: "../main",
+          validate: (value) => {
+            if (!value || value.trim().length === 0) {
+              return "Enter a source path";
+            }
+          },
+        }),
+      );
+    } else {
+      chosen = picked;
+    }
+  }
+
+  await pull(chosen, {
+    dryRun: false,
+    force: false,
+    verbose: false,
+    interactive: true,
+  });
 }
 
 async function runSyncWizard(command: "copy" | "link"): Promise<void> {

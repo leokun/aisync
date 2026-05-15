@@ -6,6 +6,7 @@ import { hookInstall, hookRemove } from "./commands/hook.js";
 import { init } from "./commands/init.js";
 import { link } from "./commands/link.js";
 import { listProviders, listWorktrees } from "./commands/list.js";
+import { pull } from "./commands/pull.js";
 import { status } from "./commands/status.js";
 import { watchCommand } from "./commands/watch.js";
 import { runWizard } from "./commands/wizard.js";
@@ -16,7 +17,7 @@ const program = new Command();
 program
   .name("aisync")
   .description("Sync AI tool configurations between git worktrees")
-  .version("0.7.1");
+  .version("0.8.0");
 
 program
   .command("copy")
@@ -30,6 +31,18 @@ program
   .option("-v, --verbose", "Show detailed output", false)
   .option("-i, --interactive", "Force interactive provider selection", false)
   .action(copy);
+
+program
+  .command("pull")
+  .description("Pull AI configs from another worktree into current directory")
+  .argument("[source]", "Source worktree path (default: auto-detect)")
+  .option("-o, --only <provider...>", "Only sync these providers")
+  .option("-e, --exclude <provider...>", "Exclude these providers")
+  .option("-d, --dry-run", "Show what would be done without doing it", false)
+  .option("-f, --force", "Overwrite existing files in current directory", false)
+  .option("-v, --verbose", "Show detailed output", false)
+  .option("-i, --interactive", "Force interactive provider selection", false)
+  .action(pull);
 
 program
   .command("link")

@@ -16,6 +16,7 @@ vi.mock("@clack/prompts", () => ({
 
 const mockCopy = vi.fn();
 const mockLink = vi.fn();
+const mockPull = vi.fn();
 const mockInit = vi.fn();
 const mockStatus = vi.fn();
 const mockListProviders = vi.fn();
@@ -26,6 +27,9 @@ vi.mock("../../../src/commands/copy.js", () => ({
 }));
 vi.mock("../../../src/commands/link.js", () => ({
   link: (...args: unknown[]) => mockLink(...args),
+}));
+vi.mock("../../../src/commands/pull.js", () => ({
+  pull: (...args: unknown[]) => mockPull(...args),
 }));
 vi.mock("../../../src/commands/init.js", () => ({
   init: (...args: unknown[]) => mockInit(...args),
@@ -40,9 +44,12 @@ vi.mock("../../../src/commands/list.js", () => ({
 
 const mockIsGitRepo = vi.fn();
 const mockGetWorktrees = vi.fn();
+const mockFindCandidateSources = vi.fn();
 vi.mock("../../../src/core/git.js", () => ({
   isGitRepo: (...args: unknown[]) => mockIsGitRepo(...args),
   getWorktrees: (...args: unknown[]) => mockGetWorktrees(...args),
+  findCandidateSources: (...args: unknown[]) =>
+    mockFindCandidateSources(...args),
 }));
 
 describe("runWizard", () => {
@@ -60,12 +67,14 @@ describe("runWizard", () => {
     mockIsCancel.mockReturnValue(false);
     mockCopy.mockReset();
     mockLink.mockReset();
+    mockPull.mockReset();
     mockInit.mockReset();
     mockStatus.mockReset();
     mockListProviders.mockReset();
     mockListWorktrees.mockReset();
     mockIsGitRepo.mockReset();
     mockGetWorktrees.mockReset();
+    mockFindCandidateSources.mockReset();
     process.exitCode = 0;
   });
 
@@ -198,6 +207,30 @@ describe("runWizard", () => {
     expect(mockCopy).toHaveBeenCalledTimes(2);
     expect(mockCopy.mock.calls[0][1]).toBe("/repo/feature-a");
     expect(mockCopy.mock.calls[1][1]).toBe("../extra");
+  });
+
+  it("dispatches to pull with chosen source from candidate list", async () => {
+    setTTY(true);
+    mockSelect
+      .mockResolvedValueOnce("pull")
+      .mockResolvedValueOnce("/repo/main");
+    mockIsGitRepo.mockResolvedValueOnce(true);
+    mockFindCandidateSources.mockResolvedValueOnce([
+      { path: "/repo/main", branch: "main", bare: false },
+      { path: "/repo/feature-a", branch: "feature-a", bare: false },
+    ]);
+
+    const { runWizard } = await import("../../../src/commands/wizard.js");
+    await runWizard();
+
+    expect(mockPull).toHaveBeenCalledOnce();
+    expect(mockPull.mock.calls[0][0]).toBe("/repo/main");
+    expect(mockPull.mock.calls[0][1]).toMatchObject({
+      dryRun: false,
+      force: false,
+      verbose: false,
+      interactive: true,
+    });
   });
 
   it("excludes the source worktree from destination choices", async () => {

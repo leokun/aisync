@@ -1,5 +1,7 @@
 # aisync
 
+[![CI](https://github.com/leokun/aisync/actions/workflows/ci.yml/badge.svg)](https://github.com/leokun/aisync/actions/workflows/ci.yml)
+
 > Sync AI tool configurations between git worktrees.
 
 AI tools store their configs in the working tree (`.claude/`, `.cursor/`, `CLAUDE.md`, etc.). These files often aren't tracked by git - whether gitignored, local-only, or simply absent in new worktrees.

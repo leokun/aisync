@@ -3,6 +3,7 @@
   "version": "0.8.0",
   "description": "Sync AI tool configurations between git worktrees",
   "type": "module",
+  "packageManager": "pnpm@11.0.8",
   "bin": {
     "aisync": "./dist/index.mjs"
   },

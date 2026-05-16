@@ -62,7 +62,6 @@ describe("watch command", () => {
   it("errors when source does not exist", async () => {
     mockExists.mockResolvedValue(false);
     await watchCommand("/missing", {
-      link: false,
       force: false,
       verbose: false,
       debounce: "200",
@@ -77,7 +76,6 @@ describe("watch command", () => {
     mockExists.mockResolvedValue(true);
     mockIsGitRepo.mockResolvedValue(false);
     await watchCommand("/some/path", {
-      link: false,
       force: false,
       verbose: false,
       debounce: "200",
@@ -99,7 +97,6 @@ describe("watch command", () => {
       },
     ]);
     await watchCommand("/some/path", {
-      link: false,
       force: false,
       verbose: false,
       debounce: "200",
@@ -120,7 +117,6 @@ describe("watch command", () => {
       },
     ]);
     await watchCommand("/some/path", {
-      link: false,
       force: false,
       verbose: false,
       debounce: "abc",

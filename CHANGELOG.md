@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `aisync completion <bash|zsh|fish>` command emits a shell completion script to stdout. Covers all commands, subcommands, flags, and dynamic provider names sourced from the registry.
 
+### Changed
+- **Breaking**: `aisync watch` is now bidirectional. Changes in any participating worktree propagate to all others, not just from a single source. Participants are discovered from `aisync-lock.json` files; the sync mode is inherited from the first lock found.
+- **Breaking**: removed the `-l/--link` flag from `aisync watch`. Mode is now read from existing locks; mixing modes across siblings is not supported within a single watch session.
+
 ## [0.9.0] - 2026-05-16
 
 ### Added

@@ -17,11 +17,19 @@ export interface CopyResult {
   drifted: string[];
 }
 
+export interface CopyOptions {
+  force: boolean;
+  dryRun: boolean;
+  lock?: LockFile | null;
+  onBeforeWrite?: (absDestPath: string) => void;
+  onAfterWrite?: (absDestPath: string) => void;
+}
+
 export async function copyProviders(
   source: string,
   destination: string,
   providers: Provider[],
-  options: { force: boolean; dryRun: boolean; lock?: LockFile | null },
+  options: CopyOptions,
 ): Promise<CopyResult> {
   const copied: CopyItem[] = [];
   const skipped: string[] = [];
@@ -64,7 +72,9 @@ export async function copyProviders(
       const type = (await isDirectory(srcPath)) ? "directory" : "file";
 
       if (!options.dryRun) {
+        options.onBeforeWrite?.(destPath);
         await copyItem(srcPath, destPath);
+        options.onAfterWrite?.(destPath);
       }
 
       const hash = await hashItem(srcPath);

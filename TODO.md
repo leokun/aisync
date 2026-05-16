@@ -19,7 +19,7 @@ Prioritized roadmap for aisync, to tackle bit by bit. Check off as you go.
 ## Bigger efforts (½ day+)
 
 - [ ] **Docs site** (Astro Starlight or VitePress): quickstart, workflow-based guides, command reference, provider authoring guide, GitHub Pages deployment
-- [ ] **Bidirectional watch**: detect changes in every linked destination and resync, handle loops
+- [x] **Bidirectional watch**: detect changes in every linked destination and resync, handle loops
 - [x] **Shell completion**: `aisync completion bash/zsh/fish`
 - [ ] **Third-party plugins/providers**: allow providers to be added via external packages (dynamic registry)
 

@@ -14,11 +14,18 @@ export interface LinkResult {
   skipped: string[];
 }
 
+export interface LinkOptions {
+  force: boolean;
+  dryRun: boolean;
+  onBeforeWrite?: (absDestPath: string) => void;
+  onAfterWrite?: (absDestPath: string) => void;
+}
+
 export async function linkProviders(
   source: string,
   destination: string,
   providers: Provider[],
-  options: { force: boolean; dryRun: boolean },
+  options: LinkOptions,
 ): Promise<LinkResult> {
   const linked: LinkItem[] = [];
   const skipped: string[] = [];
@@ -41,10 +48,12 @@ export async function linkProviders(
       const target = relative(dirname(destPath), srcPath);
 
       if (!options.dryRun) {
+        options.onBeforeWrite?.(destPath);
         if (options.force && (await exists(destPath))) {
           await removeItem(destPath);
         }
         await linkItem(target, destPath);
+        options.onAfterWrite?.(destPath);
       }
 
       linked.push({

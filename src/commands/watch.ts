@@ -1,11 +1,9 @@
-import { watch } from "node:fs";
-import { join, resolve } from "node:path";
+import { resolve } from "node:path";
 import { readConfig } from "../core/config.js";
-import { copyProviders } from "../core/copier.js";
-import { getRepoRoot, getWorktrees, isGitRepo } from "../core/git.js";
-import { linkProviders } from "../core/linker.js";
-import { writeLock } from "../core/lock.js";
+import { getRepoRoot, isGitRepo } from "../core/git.js";
+import { readSiblingLocks } from "../core/lock.js";
 import { scanProviders } from "../core/scanner.js";
+import { createBidirectionalWatcher } from "../core/watcher.js";
 import { buildProviders, filterProviders } from "../providers/registry.js";
 import { exists } from "../utils/fs.js";
 import * as log from "../utils/logger.js";
@@ -13,7 +11,6 @@ import * as log from "../utils/logger.js";
 export interface WatchOptions {
   only?: string[];
   exclude?: string[];
-  link: boolean;
   force: boolean;
   verbose: boolean;
   quiet?: boolean;
@@ -65,95 +62,71 @@ export async function watchCommand(
   }
 
   const repoRoot = await getRepoRoot(source);
-  const mode = options.link ? "link" : "copy";
+  const siblings = await readSiblingLocks(repoRoot);
 
-  log.header(`watch (${mode})`);
+  const lockedToSource = siblings.filter(
+    (s) =>
+      s.lock?.source &&
+      resolve(s.lock.source) === source &&
+      resolve(s.worktree) !== source,
+  );
+  const anyLock = siblings.some((s) => s.lock !== null);
+
+  let peers: typeof siblings;
+  if (lockedToSource.length > 0) {
+    peers = lockedToSource;
+  } else if (!anyLock) {
+    peers = siblings.filter((s) => resolve(s.worktree) !== source);
+  } else {
+    peers = [];
+  }
+
+  const sourceParticipant = siblings.find(
+    (s) => resolve(s.worktree) === source,
+  ) ?? { worktree: source, lock: null };
+
+  const participants = [sourceParticipant, ...peers];
+
+  const firstLock = participants.find((p) => p.lock !== null)?.lock;
+  const mode: "copy" | "link" = firstLock?.mode ?? "copy";
+
+  log.header(`watch (${mode}, bidirectional)`);
   log.log(`  Source: ${source}`);
   log.log(`  Repo root: ${repoRoot}`);
   log.log(`  Providers: ${activeProviders.map((p) => p.name).join(" ")}`);
   log.log(`  Debounce: ${debounceMs}ms`);
+  log.log(
+    `  Participants: ${participants.length} (source: ${source}, peers: [${peers
+      .map((p) => p.worktree)
+      .join(", ")}])`,
+  );
   log.log("");
 
-  const watchedPaths = new Set<string>();
-  const watchers: ReturnType<typeof watch>[] = [];
+  const watcher = createBidirectionalWatcher({
+    participants: participants.map((p) => ({ path: p.worktree, lock: p.lock })),
+    providers: activeProviders,
+    mode,
+    force: options.force,
+    debounceMs,
+    repoRoot,
+  });
 
-  for (const provider of activeProviders) {
-    for (const relativePath of provider.paths) {
-      const absPath = join(source, relativePath);
-      if (!(await exists(absPath))) continue;
-      if (watchedPaths.has(absPath)) continue;
-      watchedPaths.add(absPath);
-
-      try {
-        const watcher = watch(absPath, { recursive: true }, () =>
-          scheduleSync(),
-        );
-        watcher.on("error", (err: Error) => {
-          log.warn(`Watcher error on ${relativePath}: ${err.message}`);
-        });
-        watchers.push(watcher);
-        log.verbose(`watching ${relativePath}`);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        log.warn(`Failed to watch ${relativePath}: ${message}`);
-      }
-    }
-  }
-
-  if (watchers.length === 0) {
-    log.error("No paths to watch.");
+  try {
+    await watcher.start();
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    log.error(message);
     process.exitCode = 1;
     return;
   }
 
-  let timer: NodeJS.Timeout | null = null;
-  let syncing = false;
-  let pending = false;
-
-  function scheduleSync(): void {
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(() => {
-      timer = null;
-      void runSync();
-    }, debounceMs);
-  }
-
-  async function runSync(): Promise<void> {
-    if (syncing) {
-      pending = true;
-      return;
-    }
-    syncing = true;
-    try {
-      await syncToWorktrees(
-        source,
-        repoRoot,
-        activeProviders,
-        mode,
-        options.force,
-      );
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      log.error(`Sync failed: ${message}`);
-    } finally {
-      syncing = false;
-      if (pending) {
-        pending = false;
-        scheduleSync();
-      }
-    }
-  }
-
-  log.success(`Watching ${watchers.length} path(s). Ctrl+C to stop.`);
+  log.success(`Watching ${participants.length} participant(s). Ctrl+C to stop.`);
   log.log("");
 
   const shutdown = (): void => {
     log.log("");
     log.log("  Stopping watchers...");
-    for (const w of watchers) {
-      w.close();
-    }
-    if (timer) clearTimeout(timer);
+    watcher.stop();
     process.exit(0);
   };
 
@@ -161,62 +134,4 @@ export async function watchCommand(
   process.on("SIGTERM", shutdown);
 
   await new Promise<void>(() => {});
-}
-
-async function syncToWorktrees(
-  source: string,
-  repoRoot: string,
-  providers: ReturnType<typeof buildProviders>,
-  mode: "copy" | "link",
-  force: boolean,
-): Promise<void> {
-  const worktrees = await getWorktrees(repoRoot);
-  const targets = worktrees.filter(
-    (w) => !w.bare && resolve(w.path) !== source,
-  );
-
-  if (targets.length === 0) {
-    log.warn("No other worktrees to sync to.");
-    return;
-  }
-
-  const stamp = new Date().toLocaleTimeString();
-  log.log(
-    `  [${stamp}] change detected, syncing to ${targets.length} worktree(s)`,
-  );
-
-  for (const target of targets) {
-    const dest = resolve(target.path);
-    try {
-      if (mode === "copy") {
-        const result = await copyProviders(source, dest, providers, {
-          force,
-          dryRun: false,
-        });
-        if (result.copied.length > 0) {
-          await writeLock(dest, source, result.copied, "copy");
-        }
-        log.item(
-          target.path,
-          `${result.copied.length} copied, ${result.skipped.length} skipped`,
-        );
-      } else {
-        const result = await linkProviders(source, dest, providers, {
-          force,
-          dryRun: false,
-        });
-        if (result.linked.length > 0) {
-          await writeLock(dest, source, result.linked, "link");
-        }
-        log.item(
-          target.path,
-          `${result.linked.length} linked, ${result.skipped.length} skipped`,
-        );
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      log.warn(`${target.path}: ${message}`);
-    }
-  }
-  log.log("");
 }

@@ -1,6 +1,7 @@
 import { join } from "node:path";
 import { exists, readJson, writeJson } from "../utils/fs.js";
 import type { CopyItem } from "./copier.js";
+import { getWorktrees } from "./git.js";
 import type { LinkItem } from "./linker.js";
 
 export const LOCK_FILENAME = "aisync-lock.json";
@@ -28,6 +29,24 @@ export async function readLock(dir: string): Promise<LockFile | null> {
     return null;
   }
   return readJson<LockFile>(lockPath);
+}
+
+export interface SiblingLock {
+  worktree: string;
+  lock: LockFile | null;
+}
+
+export async function readSiblingLocks(
+  repoRoot: string,
+): Promise<SiblingLock[]> {
+  const worktrees = await getWorktrees(repoRoot);
+  const results: SiblingLock[] = [];
+  for (const wt of worktrees) {
+    if (wt.bare) continue;
+    const lock = await readLock(wt.path);
+    results.push({ worktree: wt.path, lock });
+  }
+  return results;
 }
 
 export async function writeLock(

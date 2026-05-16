@@ -94,11 +94,12 @@ listCmd
 
 program
   .command("watch")
-  .description("Watch source worktree and re-sync to other worktrees on change")
+  .description(
+    "Watch all participating worktrees and bidirectionally re-sync on change",
+  )
   .argument("[source]", "Source worktree path (default: current directory)")
   .option("-o, --only <provider...>", "Only sync these providers")
   .option("-e, --exclude <provider...>", "Exclude these providers")
-  .option("-l, --link", "Use symlinks instead of copy", false)
   .option("-f, --force", "Overwrite existing files in destinations", false)
   .option("-v, --verbose", "Show detailed output", false)
   .option("-q, --quiet", "Suppress info output (warn/error only)", false)

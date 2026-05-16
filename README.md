@@ -76,7 +76,11 @@ Creates relative symlinks instead of copying files. Edits in the source are refl
 aisync watch
 ```
 
-Watches the source worktree and re-syncs to all other worktrees on change. Useful when iterating on shared configs.
+Watches every participating worktree and re-syncs changes to all the others. Edits flow both ways: a change in the "main" worktree propagates to "feature-auth", and an edit in "feature-auth" propagates back.
+
+Participants are determined from `aisync-lock.json` files: the source plus every sibling whose lock points back at the source. If no worktree has a lock yet (first run), all non-bare siblings are included as a bootstrap. The sync mode (`copy` or `link`) is inherited from the first lock found.
+
+Loops are suppressed via an in-flight write guard. Hash equality short-circuits redundant events, so re-saving a file without changes does not trigger a re-sync.
 
 ### Auto-sync on `git checkout`
 
@@ -162,7 +166,7 @@ aisync pull ../main --link        # symlink instead of copy
 --exclude <provider>  Exclude providers (repeatable)
 --dry-run             Show what would happen without doing it
 --force               Overwrite existing files (and drifted local edits)
---link, -l            Use symlinks instead of copy (pull only; copy/link/watch always behave by command)
+--link, -l            Use symlinks instead of copy (pull only; copy/link behave by command, watch inherits mode from existing locks)
 --verbose             Detailed output
 --quiet, -q           Suppress info output (warnings/errors only)
 --interactive, -i     Force interactive provider selection

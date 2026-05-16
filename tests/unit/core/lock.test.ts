@@ -1,7 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CopyItem } from "../../../src/core/copier.js";
+import * as git from "../../../src/core/git.js";
 import type { LinkItem } from "../../../src/core/linker.js";
-import { LOCK_FILENAME, readLock, writeLock } from "../../../src/core/lock.js";
+import {
+  LOCK_FILENAME,
+  readLock,
+  readSiblingLocks,
+  writeLock,
+} from "../../../src/core/lock.js";
 import { createTempDir, removeTempDir } from "../../helpers/fixtures.js";
 
 describe("lock", () => {
@@ -89,6 +95,44 @@ describe("lock", () => {
       const lock = await readLock(tmp);
       expect(lock?.source).toBe("/new");
       expect(lock?.items).toHaveLength(1);
+    });
+  });
+
+  describe("readSiblingLocks", () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("filters bare worktrees and reads each lock", async () => {
+      const wt1 = await createTempDir();
+      const wt2 = await createTempDir();
+      const wt3 = await createTempDir();
+      try {
+        await writeLock(wt2, "/src", [
+          {
+            path: "f.md",
+            type: "file",
+            provider: "p",
+            hash: "11112222",
+          },
+        ]);
+
+        vi.spyOn(git, "getWorktrees").mockResolvedValue([
+          { path: wt1, branch: "main", bare: false },
+          { path: wt2, branch: "feature", bare: false },
+          { path: wt3, branch: null, bare: true },
+        ]);
+
+        const siblings = await readSiblingLocks("/any");
+        expect(siblings).toHaveLength(2);
+        expect(siblings.map((s) => s.worktree)).toEqual([wt1, wt2]);
+        expect(siblings[0].lock).toBeNull();
+        expect(siblings[1].lock?.source).toBe("/src");
+      } finally {
+        await removeTempDir(wt1);
+        await removeTempDir(wt2);
+        await removeTempDir(wt3);
+      }
     });
   });
 

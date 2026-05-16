@@ -2,6 +2,7 @@ import { resolve } from "node:path";
 import type { Provider } from "../providers/registry.js";
 import { exists, readJson } from "../utils/fs.js";
 import * as log from "../utils/logger.js";
+import { globalConfigPath } from "../utils/paths.js";
 
 export const CONFIG_FILE = ".aisyncrc";
 
@@ -13,10 +14,7 @@ export interface AisyncConfig {
   templates?: Record<string, Record<string, string>>;
 }
 
-export async function readConfig(
-  dir: string = ".",
-): Promise<AisyncConfig | null> {
-  const path = resolve(dir, CONFIG_FILE);
+async function loadConfigFile(path: string): Promise<AisyncConfig | null> {
   if (!(await exists(path))) return null;
 
   try {
@@ -24,11 +22,49 @@ export async function readConfig(
     return validateConfig(raw, path);
   } catch (err) {
     log.error(
-      `Failed to parse ${CONFIG_FILE}: ${err instanceof Error ? err.message : String(err)}`,
+      `Failed to parse ${path}: ${err instanceof Error ? err.message : String(err)}`,
     );
     process.exitCode = 1;
     return null;
   }
+}
+
+export async function readProjectConfig(
+  dir: string = ".",
+): Promise<AisyncConfig | null> {
+  return loadConfigFile(resolve(dir, CONFIG_FILE));
+}
+
+export async function readGlobalConfig(): Promise<AisyncConfig | null> {
+  return loadConfigFile(globalConfigPath());
+}
+
+function mergeConfigs(
+  global: AisyncConfig | null,
+  project: AisyncConfig | null,
+): AisyncConfig | null {
+  if (!global && !project) return null;
+  const merged: AisyncConfig = { ...(global ?? {}) };
+  if (project) {
+    for (const key of Object.keys(project) as (keyof AisyncConfig)[]) {
+      const value = project[key];
+      if (value !== undefined) {
+        // biome-ignore lint/suspicious/noExplicitAny: merge by key
+        (merged as any)[key] = value;
+      }
+    }
+  }
+  return merged;
+}
+
+export async function readConfig(
+  dir: string = ".",
+): Promise<AisyncConfig | null> {
+  const [global, project] = await Promise.all([
+    readGlobalConfig(),
+    readProjectConfig(dir),
+  ]);
+  return mergeConfigs(global, project);
 }
 
 function validateConfig(raw: unknown, path: string): AisyncConfig {

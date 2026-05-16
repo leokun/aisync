@@ -1,18 +1,34 @@
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { CONFIG_FILE, readConfig } from "../../../src/core/config.js";
+import {
+  CONFIG_FILE,
+  readConfig,
+  readGlobalConfig,
+  readProjectConfig,
+} from "../../../src/core/config.js";
 import { createTempDir, removeTempDir } from "../../helpers/fixtures.js";
 
 describe("readConfig", () => {
   let dir: string;
+  let xdgDir: string;
+  let originalXdg: string | undefined;
 
   beforeEach(async () => {
     dir = await createTempDir();
+    xdgDir = await createTempDir();
+    originalXdg = process.env.XDG_CONFIG_HOME;
+    process.env.XDG_CONFIG_HOME = xdgDir;
   });
 
   afterEach(async () => {
     await removeTempDir(dir);
+    await removeTempDir(xdgDir);
+    if (originalXdg === undefined) {
+      delete process.env.XDG_CONFIG_HOME;
+    } else {
+      process.env.XDG_CONFIG_HOME = originalXdg;
+    }
   });
 
   it("returns null when no config file exists", async () => {
@@ -111,5 +127,75 @@ describe("readConfig", () => {
     expect(config).toBeNull();
     expect(process.exitCode).toBe(1);
     process.exitCode = before;
+  });
+});
+
+describe("global + project config merging", () => {
+  let projectDir: string;
+  let xdgDir: string;
+  let originalXdg: string | undefined;
+
+  async function writeGlobal(content: object): Promise<void> {
+    const dir = join(xdgDir, "aisync");
+    await mkdir(dir, { recursive: true });
+    await writeFile(join(dir, "config.json"), JSON.stringify(content));
+  }
+
+  async function writeProject(content: object): Promise<void> {
+    await writeFile(join(projectDir, CONFIG_FILE), JSON.stringify(content));
+  }
+
+  beforeEach(async () => {
+    projectDir = await createTempDir();
+    xdgDir = await createTempDir();
+    originalXdg = process.env.XDG_CONFIG_HOME;
+    process.env.XDG_CONFIG_HOME = xdgDir;
+  });
+
+  afterEach(async () => {
+    await removeTempDir(projectDir);
+    await removeTempDir(xdgDir);
+    if (originalXdg === undefined) {
+      delete process.env.XDG_CONFIG_HOME;
+    } else {
+      process.env.XDG_CONFIG_HOME = originalXdg;
+    }
+  });
+
+  it("readGlobalConfig returns null when no file present", async () => {
+    const config = await readGlobalConfig();
+    expect(config).toBeNull();
+  });
+
+  it("readProjectConfig returns null when no file present", async () => {
+    const config = await readProjectConfig(projectDir);
+    expect(config).toBeNull();
+  });
+
+  it("returns project config alone when no global", async () => {
+    await writeProject({ only: ["claude"] });
+    const config = await readConfig(projectDir);
+    expect(config).toEqual({ only: ["claude"] });
+  });
+
+  it("returns global config alone when no project", async () => {
+    await writeGlobal({ only: ["claude"] });
+    const config = await readConfig(projectDir);
+    expect(config).toEqual({ only: ["claude"] });
+  });
+
+  it("merges global and project keys when both present", async () => {
+    await writeGlobal({ only: ["claude"] });
+    await writeProject({ exclude: ["cursor"] });
+    const config = await readConfig(projectDir);
+    expect(config).toEqual({ only: ["claude"], exclude: ["cursor"] });
+  });
+
+  it("project overrides global on overlapping keys", async () => {
+    await writeGlobal({ only: ["a"], exclude: ["z"] });
+    await writeProject({ only: ["b"] });
+    const config = await readConfig(projectDir);
+    expect(config?.only).toEqual(["b"]);
+    expect(config?.exclude).toEqual(["z"]);
   });
 });

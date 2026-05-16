@@ -9,6 +9,7 @@ export interface SyncOptions {
   dryRun: boolean;
   force: boolean;
   verbose: boolean;
+  quiet?: boolean;
   interactive?: boolean;
 }
 
@@ -52,13 +53,13 @@ export async function resolveSourceDest(
   const lock = await readLock(".");
   if (!lock) {
     log.error(`No destination specified and no aisync-lock.json found.`);
-    console.log();
-    console.log("  Usage:");
-    console.log(`    npx aisync ${commandName} [source] <destination>`);
-    console.log();
-    console.log("  Examples:");
-    console.log(`    npx aisync ${commandName} . ../feature-auth`);
-    console.log(`    npx aisync ${commandName} ../main ../feature-auth`);
+    log.log("");
+    log.log("  Usage:");
+    log.log(`    npx aisync ${commandName} [source] <destination>`);
+    log.log("");
+    log.log("  Examples:");
+    log.log(`    npx aisync ${commandName} . ../feature-auth`);
+    log.log(`    npx aisync ${commandName} ../main ../feature-auth`);
     process.exitCode = 1;
     return null;
   }

@@ -10,9 +10,11 @@ import { selectProviders } from "../utils/prompt.js";
 interface InitOptions {
   only?: string[];
   interactive?: boolean;
+  quiet?: boolean;
 }
 
 export async function init(options: InitOptions): Promise<void> {
+  log.setQuiet(options.quiet ?? false);
   const dir = resolve(".");
   const config = await readConfig(dir);
   const registry = buildProviders(config?.providers);
@@ -42,18 +44,18 @@ export async function init(options: InitOptions): Promise<void> {
     (r) => r.provider.name === "cross-tool",
   );
   if (crossToolResult) {
-    console.log("  Detected base:");
+    log.log("  Detected base:");
     for (const p of crossToolResult.foundPaths) {
       log.item(p, "✓");
     }
     if (crossToolResult.foundPaths.length === 0) {
-      console.log("    (none)");
+      log.log("    (none)");
     }
-    console.log();
+    log.log("");
   }
 
   // Show detected providers
-  console.log("  Detected providers:");
+  log.log("  Detected providers:");
   for (const result of scanResults) {
     if (result.provider.name === "cross-tool") continue;
     if (result.foundPaths.length > 0) {
@@ -62,7 +64,7 @@ export async function init(options: InitOptions): Promise<void> {
       log.item(result.provider.name, "not found");
     }
   }
-  console.log();
+  log.log("");
 
   // Bootstrap missing providers
   const result = await bootstrap(dir, scanResults, {
@@ -70,21 +72,21 @@ export async function init(options: InitOptions): Promise<void> {
   });
 
   if (result.generated.length === 0) {
-    console.log("  Nothing to generate - all providers already configured.");
+    log.log("  Nothing to generate - all providers already configured.");
   } else {
-    console.log("  Generated:");
+    log.log("  Generated:");
     for (const entry of result.generated) {
       for (const path of entry.paths) {
         log.item(path, `references base config`);
       }
     }
-    console.log();
+    log.log("");
     log.success(
       `${result.generated.reduce((acc, e) => acc + e.paths.length, 0)} provider config(s) generated.`,
     );
   }
 
-  console.log();
-  console.log("  Done!");
-  console.log();
+  log.log("");
+  log.log("  Done!");
+  log.log("");
 }

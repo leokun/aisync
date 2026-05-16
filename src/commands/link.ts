@@ -14,6 +14,7 @@ export async function link(
   options: SyncOptions,
 ): Promise<void> {
   log.setVerbose(options.verbose);
+  log.setQuiet(options.quiet ?? false);
 
   const config = await readConfig(".");
   const registry = buildProviders(config?.providers);
@@ -47,16 +48,16 @@ export async function link(
   const dryLabel = options.dryRun ? " (dry run)" : "";
   log.header(`link${dryLabel}`);
 
-  console.log(`  Source: ${source}`);
+  log.log(`  Source: ${source}`);
   if (fromLock) {
-    console.log(`  Destination: . (from aisync-lock.json)`);
+    log.log(`  Destination: . (from aisync-lock.json)`);
   } else {
-    console.log(`  Destination: ${destination}`);
+    log.log(`  Destination: ${destination}`);
   }
-  console.log(
+  log.log(
     `  Providers: ${activeProviders.map((p) => p.name).join(" ") || "none found"}`,
   );
-  console.log();
+  log.log("");
 
   if (activeProviders.length === 0) {
     log.warn("No providers found in source directory.");
@@ -69,17 +70,17 @@ export async function link(
   });
 
   if (options.dryRun) {
-    console.log("  Would link:");
+    log.log("  Would link:");
     for (const item of result.linked) {
       log.item(item.path, `-> ${item.target}`);
     }
     for (const path of result.skipped) {
       log.item(path, "(exists, use --force to overwrite)");
     }
-    console.log();
-    console.log("  No changes made. Remove --dry-run to apply.");
+    log.log("");
+    log.log("  No changes made. Remove --dry-run to apply.");
   } else {
-    console.log("  Linking...");
+    log.log("  Linking...");
     for (const item of result.linked) {
       log.item(item.path, `-> ${item.target}`);
     }
@@ -91,7 +92,7 @@ export async function link(
       await writeLock(destination, source, result.linked, "link");
     }
 
-    console.log();
+    log.log("");
     log.success(`${result.linked.length} item(s) linked`);
     if (result.skipped.length > 0) {
       log.warn(`${result.skipped.length} item(s) skipped`);
@@ -104,7 +105,7 @@ export async function link(
     }
   }
 
-  console.log();
-  console.log("  Done!");
-  console.log();
+  log.log("");
+  log.log("  Done!");
+  log.log("");
 }

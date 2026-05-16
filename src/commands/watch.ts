@@ -16,6 +16,7 @@ export interface WatchOptions {
   link: boolean;
   force: boolean;
   verbose: boolean;
+  quiet?: boolean;
   debounce: string;
 }
 
@@ -24,6 +25,7 @@ export async function watchCommand(
   options: WatchOptions,
 ): Promise<void> {
   log.setVerbose(options.verbose);
+  log.setQuiet(options.quiet ?? false);
 
   const config = await readConfig(".");
   const registry = buildProviders(config?.providers);
@@ -66,11 +68,11 @@ export async function watchCommand(
   const mode = options.link ? "link" : "copy";
 
   log.header(`watch (${mode})`);
-  console.log(`  Source: ${source}`);
-  console.log(`  Repo root: ${repoRoot}`);
-  console.log(`  Providers: ${activeProviders.map((p) => p.name).join(" ")}`);
-  console.log(`  Debounce: ${debounceMs}ms`);
-  console.log();
+  log.log(`  Source: ${source}`);
+  log.log(`  Repo root: ${repoRoot}`);
+  log.log(`  Providers: ${activeProviders.map((p) => p.name).join(" ")}`);
+  log.log(`  Debounce: ${debounceMs}ms`);
+  log.log("");
 
   const watchedPaths = new Set<string>();
   const watchers: ReturnType<typeof watch>[] = [];
@@ -143,10 +145,10 @@ export async function watchCommand(
   }
 
   log.success(`Watching ${watchers.length} path(s). Ctrl+C to stop.`);
-  console.log();
+  log.log("");
 
   const shutdown = (): void => {
-    console.log();
+    log.log("");
     log.log("  Stopping watchers...");
     for (const w of watchers) {
       w.close();
@@ -179,7 +181,7 @@ async function syncToWorktrees(
   }
 
   const stamp = new Date().toLocaleTimeString();
-  console.log(
+  log.log(
     `  [${stamp}] change detected, syncing to ${targets.length} worktree(s)`,
   );
 
@@ -216,5 +218,5 @@ async function syncToWorktrees(
       log.warn(`${target.path}: ${message}`);
     }
   }
-  console.log();
+  log.log("");
 }

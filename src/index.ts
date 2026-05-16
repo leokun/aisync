@@ -29,6 +29,7 @@ program
   .option("-d, --dry-run", "Show what would be done without doing it", false)
   .option("-f, --force", "Overwrite existing files in destination", false)
   .option("-v, --verbose", "Show detailed output", false)
+  .option("-q, --quiet", "Suppress info output (warn/error only)", false)
   .option("-i, --interactive", "Force interactive provider selection", false)
   .action(copy);
 
@@ -41,6 +42,7 @@ program
   .option("-d, --dry-run", "Show what would be done without doing it", false)
   .option("-f, --force", "Overwrite existing files in current directory", false)
   .option("-v, --verbose", "Show detailed output", false)
+  .option("-q, --quiet", "Suppress info output (warn/error only)", false)
   .option("-i, --interactive", "Force interactive provider selection", false)
   .action(pull);
 
@@ -54,6 +56,7 @@ program
   .option("-d, --dry-run", "Show what would be done without doing it", false)
   .option("-f, --force", "Overwrite existing files/links in destination", false)
   .option("-v, --verbose", "Show detailed output", false)
+  .option("-q, --quiet", "Suppress info output (warn/error only)", false)
   .option("-i, --interactive", "Force interactive provider selection", false)
   .action(link);
 
@@ -62,11 +65,13 @@ program
   .description("Bootstrap AI provider configs for the current project")
   .option("-o, --only <provider...>", "Only init these providers")
   .option("-i, --interactive", "Force interactive provider selection", false)
+  .option("-q, --quiet", "Suppress info output (warn/error only)", false)
   .action(init);
 
 program
   .command("status")
   .description("Show detected providers and git worktrees")
+  .option("-q, --quiet", "Suppress info output (warn/error only)", false)
   .action(status);
 
 const listCmd = program
@@ -76,11 +81,13 @@ const listCmd = program
 listCmd
   .command("providers")
   .description("List detected AI providers in current directory")
+  .option("-q, --quiet", "Suppress info output (warn/error only)", false)
   .action(listProviders);
 
 listCmd
   .command("worktrees")
   .description("List git worktrees for current repository")
+  .option("-q, --quiet", "Suppress info output (warn/error only)", false)
   .action(listWorktrees);
 
 program
@@ -92,6 +99,7 @@ program
   .option("-l, --link", "Use symlinks instead of copy", false)
   .option("-f, --force", "Overwrite existing files in destinations", false)
   .option("-v, --verbose", "Show detailed output", false)
+  .option("-q, --quiet", "Suppress info output (warn/error only)", false)
   .option("--debounce <ms>", "Debounce delay before re-syncing", "200")
   .action(watchCommand);
 
@@ -114,6 +122,7 @@ program
   .description("Diagnose sync state vs aisync-lock.json")
   .option("--json", "Output report as JSON", false)
   .option("-v, --verbose", "Show detailed output", false)
+  .option("-q, --quiet", "Suppress info output (warn/error only)", false)
   .action(doctor);
 
 program
@@ -123,6 +132,7 @@ program
   .option("-d, --dry-run", "Show what would be removed", false)
   .option("-f, --force", "Skip confirmation prompt", false)
   .option("-v, --verbose", "Show detailed output", false)
+  .option("-q, --quiet", "Suppress info output (warn/error only)", false)
   .action(clean);
 
 if (process.argv.length <= 2 && isTTY()) {

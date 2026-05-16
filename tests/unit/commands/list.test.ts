@@ -25,7 +25,9 @@ vi.mock("../../../src/core/config.js", () => ({
 }));
 
 vi.mock("../../../src/utils/logger.js", () => ({
+  setQuiet: vi.fn(),
   header: vi.fn(),
+  log: vi.fn(),
   item: vi.fn(),
   error: vi.fn(),
 }));
@@ -40,11 +42,10 @@ const mockGetWorktrees = vi.mocked(getWorktrees);
 const mockScanProviders = vi.mocked(scanProviders);
 
 describe("list commands", () => {
-  let logSpy: ReturnType<typeof vi.spyOn>;
+  const logSpy = vi.mocked(log.log);
 
   beforeEach(() => {
     vi.clearAllMocks();
-    logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     process.exitCode = undefined;
   });
 

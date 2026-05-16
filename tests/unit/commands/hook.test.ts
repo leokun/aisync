@@ -17,10 +17,12 @@ vi.mock("../../../src/core/git.js", () => ({
 
 vi.mock("../../../src/utils/logger.js", () => ({
   header: vi.fn(),
+  log: vi.fn(),
   success: vi.fn(),
   warn: vi.fn(),
   error: vi.fn(),
   setVerbose: vi.fn(),
+  setQuiet: vi.fn(),
 }));
 
 import { hookInstall, hookRemove } from "../../../src/commands/hook.js";

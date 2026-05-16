@@ -12,7 +12,9 @@ vi.mock("../../../src/core/doctor.js", () => ({
 
 vi.mock("../../../src/utils/logger.js", () => ({
   setVerbose: vi.fn(),
+  setQuiet: vi.fn(),
   header: vi.fn(),
+  log: vi.fn(),
   item: vi.fn(),
   error: vi.fn(),
   success: vi.fn(),

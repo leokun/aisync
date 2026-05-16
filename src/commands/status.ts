@@ -5,19 +5,24 @@ import { scanProviders } from "../core/scanner.js";
 import { buildProviders } from "../providers/registry.js";
 import * as log from "../utils/logger.js";
 
-export async function status(): Promise<void> {
+interface StatusOptions {
+  quiet?: boolean;
+}
+
+export async function status(options: StatusOptions = {}): Promise<void> {
+  log.setQuiet(options.quiet ?? false);
   const dir = resolve(".");
   const config = await readConfig(dir);
   const providers = buildProviders(config?.providers);
 
   log.header("status");
 
-  console.log(`  Worktree courant: ${dir}`);
-  console.log();
+  log.log(`  Worktree courant: ${dir}`);
+  log.log("");
 
   // Scan providers
   const scanResults = await scanProviders(dir, providers);
-  console.log("  Detected providers:");
+  log.log("  Detected providers:");
   for (const result of scanResults) {
     if (result.foundPaths.length > 0) {
       log.item(result.provider.name, result.foundPaths.join(" "));
@@ -26,14 +31,14 @@ export async function status(): Promise<void> {
 
   const hasAny = scanResults.some((r) => r.foundPaths.length > 0);
   if (!hasAny) {
-    console.log("    (none)");
+    log.log("    (none)");
   }
-  console.log();
+  log.log("");
 
   // List worktrees
   if (await isGitRepo(dir)) {
     const worktrees = await getWorktrees(dir);
-    console.log("  Git worktrees:");
+    log.log("  Git worktrees:");
     for (const wt of worktrees) {
       if (wt.bare) {
         log.item("(bare)", wt.path);
@@ -42,11 +47,11 @@ export async function status(): Promise<void> {
       }
     }
     if (worktrees.length === 0) {
-      console.log("    (none)");
+      log.log("    (none)");
     }
   } else {
-    console.log("  Not a git repository.");
+    log.log("  Not a git repository.");
   }
 
-  console.log();
+  log.log("");
 }

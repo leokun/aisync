@@ -5,7 +5,12 @@ import { scanProviders } from "../core/scanner.js";
 import { buildProviders } from "../providers/registry.js";
 import * as log from "../utils/logger.js";
 
-export async function listProviders(): Promise<void> {
+interface ListOptions {
+  quiet?: boolean;
+}
+
+export async function listProviders(options: ListOptions = {}): Promise<void> {
+  log.setQuiet(options.quiet ?? false);
   const dir = resolve(".");
   const config = await readConfig(dir);
   const providers = buildProviders(config?.providers);
@@ -21,12 +26,13 @@ export async function listProviders(): Promise<void> {
 
   const hasAny = scanResults.some((r) => r.foundPaths.length > 0);
   if (!hasAny) {
-    console.log("    (none)");
+    log.log("    (none)");
   }
-  console.log();
+  log.log("");
 }
 
-export async function listWorktrees(): Promise<void> {
+export async function listWorktrees(options: ListOptions = {}): Promise<void> {
+  log.setQuiet(options.quiet ?? false);
   const dir = resolve(".");
 
   log.header("worktrees");
@@ -47,7 +53,7 @@ export async function listWorktrees(): Promise<void> {
   }
 
   if (worktrees.length === 0) {
-    console.log("    (none)");
+    log.log("    (none)");
   }
-  console.log();
+  log.log("");
 }

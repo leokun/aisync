@@ -4,6 +4,7 @@ import {
   header,
   item,
   log,
+  setQuiet,
   setVerbose,
   success,
   verbose,
@@ -18,6 +19,7 @@ describe("logger", () => {
     logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     setVerbose(false);
+    setQuiet(false);
   });
 
   afterEach(() => {
@@ -99,6 +101,54 @@ describe("logger", () => {
       const titleLine = logSpy.mock.calls[1][0] as string;
       expect(titleLine).toContain("aisync");
       expect(titleLine).toContain("copy");
+    });
+  });
+
+  describe("setQuiet", () => {
+    it("suppresses log when enabled", () => {
+      setQuiet(true);
+      log("hidden");
+      expect(logSpy).not.toHaveBeenCalled();
+    });
+
+    it("suppresses success, item, and header when enabled", () => {
+      setQuiet(true);
+      success("done");
+      item("file.md", "ok");
+      header("copy");
+      expect(logSpy).not.toHaveBeenCalled();
+    });
+
+    it("suppresses verbose even when verbose mode is on", () => {
+      setVerbose(true);
+      setQuiet(true);
+      verbose("debug");
+      expect(logSpy).not.toHaveBeenCalled();
+    });
+
+    it("does NOT suppress warn", () => {
+      setQuiet(true);
+      warn("careful");
+      expect(logSpy).toHaveBeenCalledOnce();
+      const output = logSpy.mock.calls[0][0] as string;
+      expect(output).toContain("careful");
+    });
+
+    it("does NOT suppress error", () => {
+      setQuiet(true);
+      error("boom");
+      expect(errorSpy).toHaveBeenCalledOnce();
+      const output = errorSpy.mock.calls[0][0] as string;
+      expect(output).toContain("boom");
+    });
+
+    it("restores output when disabled", () => {
+      setQuiet(true);
+      log("hidden");
+      setQuiet(false);
+      log("visible");
+      expect(logSpy).toHaveBeenCalledOnce();
+      expect(logSpy.mock.calls[0][0]).toBe("visible");
     });
   });
 });

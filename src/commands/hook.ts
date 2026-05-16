@@ -68,11 +68,11 @@ export async function hookInstall(cwd: string = "."): Promise<void> {
 
   log.header("hook install");
   log.success(`Installed ${HOOK_NAME} hook at ${hookPath}`);
-  console.log();
-  console.log(
+  log.log("");
+  log.log(
     "  New worktrees will run 'aisync copy' automatically after checkout.",
   );
-  console.log();
+  log.log("");
 }
 
 export async function hookRemove(cwd: string = "."): Promise<void> {
@@ -109,5 +109,5 @@ export async function hookRemove(cwd: string = "."): Promise<void> {
     await writeFile(hookPath, stripped, "utf-8");
     log.success(`Removed aisync block from ${hookPath}`);
   }
-  console.log();
+  log.log("");
 }

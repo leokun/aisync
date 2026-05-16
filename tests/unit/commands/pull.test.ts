@@ -33,6 +33,7 @@ vi.mock("../../../src/utils/fs.js", () => ({
 
 vi.mock("../../../src/utils/logger.js", () => ({
   setVerbose: vi.fn(),
+  setQuiet: vi.fn(),
   header: vi.fn(),
   log: vi.fn(),
   success: vi.fn(),
@@ -94,13 +95,12 @@ function setupValidSource() {
 }
 
 describe("pull command", () => {
-  let logSpy: ReturnType<typeof vi.spyOn>;
+  const logSpy = vi.mocked(log.log);
   let originalStdinTTY: boolean | undefined;
   let originalStdoutTTY: boolean | undefined;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     process.exitCode = undefined;
     originalStdinTTY = process.stdin.isTTY;
     originalStdoutTTY = process.stdout.isTTY;

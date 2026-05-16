@@ -15,10 +15,12 @@ interface CleanOptions {
   dryRun?: boolean;
   force?: boolean;
   verbose?: boolean;
+  quiet?: boolean;
 }
 
 export async function clean(options: CleanOptions): Promise<void> {
   log.setVerbose(Boolean(options.verbose));
+  log.setQuiet(Boolean(options.quiet));
 
   const cwd = resolve(".");
   const targets = options.all ? await collectAllTargets(cwd) : [cwd];
@@ -32,9 +34,9 @@ export async function clean(options: CleanOptions): Promise<void> {
   log.header(`clean${dryLabel}`);
 
   for (const t of targets) {
-    console.log(`  Target: ${t}`);
+    log.log(`  Target: ${t}`);
   }
-  console.log();
+  log.log("");
 
   if (!options.dryRun && !options.force) {
     const confirmed = await confirmCleanup(targets.length);
@@ -58,13 +60,13 @@ export async function clean(options: CleanOptions): Promise<void> {
     }
   }
 
-  console.log();
+  log.log("");
   if (options.dryRun) {
-    console.log(`  Would remove ${totalRemoved} item(s). No changes made.`);
+    log.log(`  Would remove ${totalRemoved} item(s). No changes made.`);
   } else {
     log.success(`${totalRemoved} item(s) removed`);
   }
-  console.log();
+  log.log("");
 }
 
 async function collectAllTargets(cwd: string): Promise<string[]> {
@@ -109,7 +111,7 @@ async function confirmCleanup(count: number): Promise<boolean> {
 }
 
 function printResult(result: CleanResult, dryRun: boolean): void {
-  console.log(`  ${result.destination}`);
+  log.log(`  ${result.destination}`);
   if (result.removed.length === 0 && !result.lockRemoved) {
     log.item("(nothing to remove)", "");
   }
@@ -122,5 +124,5 @@ function printResult(result: CleanResult, dryRun: boolean): void {
   if (result.lockRemoved) {
     log.item("aisync-lock.json", dryRun ? "would remove" : "✓ removed");
   }
-  console.log();
+  log.log("");
 }

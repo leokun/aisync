@@ -11,6 +11,7 @@ import * as log from "../utils/logger.js";
 interface DoctorOptions {
   json?: boolean;
   verbose?: boolean;
+  quiet?: boolean;
 }
 
 const STATUS_LABEL: Record<ItemStatus, string> = {
@@ -33,6 +34,7 @@ const STATUS_DESCRIPTION: Record<ItemStatus, string> = {
 
 export async function doctor(options: DoctorOptions): Promise<void> {
   log.setVerbose(Boolean(options.verbose));
+  log.setQuiet(Boolean(options.quiet));
   const destination = resolve(".");
 
   let report: DoctorReport;
@@ -63,15 +65,15 @@ export async function doctor(options: DoctorOptions): Promise<void> {
 function printReport(report: DoctorReport): void {
   log.header("doctor");
 
-  console.log(`  Source: ${report.source}`);
-  console.log(`  Destination: ${report.destination}`);
-  console.log(`  Last sync: ${report.lastSync}`);
-  console.log(`  Mode: ${report.mode}`);
-  console.log();
+  log.log(`  Source: ${report.source}`);
+  log.log(`  Destination: ${report.destination}`);
+  log.log(`  Last sync: ${report.lastSync}`);
+  log.log(`  Mode: ${report.mode}`);
+  log.log("");
 
   if (report.items.length === 0) {
-    console.log("  Lock file has no items.");
-    console.log();
+    log.log("  Lock file has no items.");
+    log.log("");
     return;
   }
 
@@ -84,16 +86,16 @@ function printReport(report: DoctorReport): void {
       : `${symbol} ${label}`;
     log.item(item.path, right);
   }
-  console.log();
+  log.log("");
 
   const summary = formatSummary(report.counts);
-  console.log(`  Summary: ${summary}`);
+  log.log(`  Summary: ${summary}`);
 
   const reco = recommendation(report);
   if (reco) {
-    console.log(`  ${reco}`);
+    log.log(`  ${reco}`);
   }
-  console.log();
+  log.log("");
 }
 
 function symbolFor(status: ItemStatus): string {

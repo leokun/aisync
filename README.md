@@ -130,16 +130,52 @@ Removes files and folders listed in `aisync-lock.json`, then deletes the lock fi
 
 When you run `copy`, `link`, or `init` in a TTY without `--only` or `--exclude`, aisync prompts you to pick which providers to sync. Pass `--only` / `--exclude` to skip the prompt, or use `-i, --interactive` to force it.
 
+### Pull configs from another worktree
+
+```bash
+aisync pull                       # auto-detect a sibling worktree
+aisync pull ../main               # explicit source
+aisync pull ../main --link        # symlink instead of copy
+```
+
+`pull` is the inverse of `copy`: instead of pushing the current worktree to a destination, it brings configs from another worktree into the current directory.
+
 ## Options
 
 ```
 --only <provider>     Sync only specific providers (repeatable)
 --exclude <provider>  Exclude providers (repeatable)
 --dry-run             Show what would happen without doing it
---force               Overwrite existing files
+--force               Overwrite existing files (and drifted local edits)
+--link, -l            Use symlinks instead of copy (pull only; copy/link/watch always behave by command)
 --verbose             Detailed output
+--quiet, -q           Suppress info output (warnings/errors only)
 --interactive, -i     Force interactive provider selection
 ```
+
+### Drift protection
+
+When `copy` or `pull` detects that a destination file has been modified locally since the last sync (its hash no longer matches `aisync-lock.json`), it skips the file and reports a `drift` warning instead of silently overwriting. Pass `--force` to overwrite drifted files.
+
+## Configuration
+
+aisync reads two config files and merges them, with project values overriding global values key by key:
+
+| Level | Location |
+|-------|----------|
+| Global | `$XDG_CONFIG_HOME/aisync/config.json` (defaults to `~/.config/aisync/config.json`). On Windows: `%APPDATA%/aisync/config.json`. |
+| Project | `.aisyncrc` at the project root (JSON). |
+
+Supported keys: `source`, `only`, `exclude`, `providers`, `templates`.
+
+```json
+{
+  "only": ["claude", "cursor"],
+  "source": "../main"
+}
+```
+
+Put your favorite providers in the global config to skip the prompt in every repo, and override per-project as needed.
 
 ## Why
 
@@ -153,6 +189,18 @@ This scales poorly, especially with agent orchestrators (Superset, Conductor, Em
 # .conductor/setup.sh
 aisync copy "$CONDUCTOR_MAIN_WORKTREE" "$(pwd)" --force
 ```
+
+## Release (maintainers)
+
+```bash
+pnpm release patch        # bumps 0.9.0 -> 0.9.1
+pnpm release minor        # bumps 0.9.x -> 0.10.0
+pnpm release major        # bumps 0.x.x -> 1.0.0
+pnpm release 1.2.3        # explicit version
+pnpm release patch --dry-run   # preview pipeline
+```
+
+`scripts/release.sh` handles version bump (package.json + src/index.ts), lint, tests, build, `CHANGELOG.md` entry, commit, tag, push, npm publish, and GitHub release in one pipeline.
 
 ## Roadmap
 

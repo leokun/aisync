@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-05-16
+
+### Added
+- `--quiet` / `-q` flag on every command (copy, pull, link, init, status, list, watch, doctor, clean) to suppress info output while still showing warnings and errors.
+- GitHub Actions CI workflow running lint, tests, and build on every push and pull request (Node 24, pnpm).
+- `CHANGELOG.md` documenting the project history from v0.1.0 onwards.
+
 ## [0.8.0] - 2026-05-15
 
 ### Added
@@ -70,6 +77,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `aisync-lock.json` tracking for re-sync.
 - `aisync status`, `aisync list providers`, `aisync list worktrees`.
 
+[0.9.0]: https://github.com/leokun/aisync/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/leokun/aisync/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/leokun/aisync/compare/v0.6.0...v0.7.1
 [0.6.0]: https://github.com/leokun/aisync/compare/v0.5.0...v0.6.0

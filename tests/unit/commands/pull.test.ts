@@ -4,6 +4,10 @@ vi.mock("../../../src/core/copier.js", () => ({
   copyProviders: vi.fn(),
 }));
 
+vi.mock("../../../src/core/linker.js", () => ({
+  linkProviders: vi.fn(),
+}));
+
 vi.mock("../../../src/core/lock.js", () => ({
   readLock: vi.fn(),
   writeLock: vi.fn(),
@@ -51,6 +55,7 @@ vi.mock("@clack/prompts", () => ({
 import { pull } from "../../../src/commands/pull.js";
 import { copyProviders } from "../../../src/core/copier.js";
 import { findCandidateSources } from "../../../src/core/git.js";
+import { linkProviders } from "../../../src/core/linker.js";
 import { readLock, writeLock } from "../../../src/core/lock.js";
 import { scanProviders } from "../../../src/core/scanner.js";
 import { filterProviders } from "../../../src/providers/registry.js";
@@ -58,6 +63,7 @@ import { exists, isDirectory } from "../../../src/utils/fs.js";
 import * as log from "../../../src/utils/logger.js";
 
 const mockCopyProviders = vi.mocked(copyProviders);
+const mockLinkProviders = vi.mocked(linkProviders);
 const mockReadLock = vi.mocked(readLock);
 const mockWriteLock = vi.mocked(writeLock);
 const mockScanProviders = vi.mocked(scanProviders);
@@ -88,6 +94,18 @@ function setupValidSource() {
   mockCopyProviders.mockResolvedValue({
     copied: [
       { path: "CLAUDE.md", type: "file", provider: "claude", hash: "abcd1234" },
+    ],
+    skipped: [],
+    drifted: [],
+  });
+  mockLinkProviders.mockResolvedValue({
+    linked: [
+      {
+        path: "CLAUDE.md",
+        type: "file",
+        provider: "claude",
+        target: "../src/CLAUDE.md",
+      },
     ],
     skipped: [],
   });
@@ -274,6 +292,57 @@ describe("pull command", () => {
         ["cursor"],
         expect.any(Array),
       );
+    });
+
+    it("warns when items have drift", async () => {
+      mockExists.mockResolvedValue(true);
+      mockIsDirectory.mockResolvedValue(true);
+      mockFilterProviders.mockReturnValue([claude]);
+      mockScanProviders.mockResolvedValue([
+        { provider: claude, foundPaths: [".claude/"], missingPaths: [] },
+      ]);
+      mockCopyProviders.mockResolvedValue({
+        copied: [],
+        skipped: [],
+        drifted: ["CLAUDE.md"],
+      });
+
+      await pull("/src", defaultOpts);
+
+      expect(log.warn).toHaveBeenCalledWith(
+        expect.stringContaining("local edits (drift)"),
+      );
+      expect(mockWriteLock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("--link mode", () => {
+    it("calls linkProviders, not copyProviders, when --link", async () => {
+      setupValidSource();
+
+      await pull("/src", { ...defaultOpts, link: true });
+
+      expect(mockLinkProviders).toHaveBeenCalled();
+      expect(mockCopyProviders).not.toHaveBeenCalled();
+    });
+
+    it("writes lock with mode 'link' when --link", async () => {
+      setupValidSource();
+
+      await pull("/src", { ...defaultOpts, link: true });
+
+      expect(mockWriteLock).toHaveBeenCalled();
+      const lockCall = mockWriteLock.mock.calls[0];
+      expect(lockCall[3]).toBe("link");
+    });
+
+    it("skips writeLock in dry-run --link mode", async () => {
+      setupValidSource();
+
+      await pull("/src", { ...defaultOpts, link: true, dryRun: true });
+
+      expect(mockLinkProviders).toHaveBeenCalled();
+      expect(mockWriteLock).not.toHaveBeenCalled();
     });
   });
 });

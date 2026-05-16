@@ -41,6 +41,7 @@ program
   .option("-e, --exclude <provider...>", "Exclude these providers")
   .option("-d, --dry-run", "Show what would be done without doing it", false)
   .option("-f, --force", "Overwrite existing files in current directory", false)
+  .option("-l, --link", "Use symlinks instead of copy", false)
   .option("-v, --verbose", "Show detailed output", false)
   .option("-q, --quiet", "Suppress info output (warn/error only)", false)
   .option("-i, --interactive", "Force interactive provider selection", false)

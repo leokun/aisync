@@ -3,6 +3,7 @@ import { cancel, isCancel, select } from "@clack/prompts";
 import { readConfig } from "../core/config.js";
 import { copyProviders } from "../core/copier.js";
 import { findCandidateSources } from "../core/git.js";
+import { linkProviders } from "../core/linker.js";
 import { readLock, writeLock } from "../core/lock.js";
 import { scanProviders } from "../core/scanner.js";
 import { buildProviders, filterProviders } from "../providers/registry.js";
@@ -107,7 +108,8 @@ export async function pull(
   }
 
   const dryLabel = options.dryRun ? " (dry run)" : "";
-  log.header(`pull${dryLabel}`);
+  const modeLabel = options.link ? " (link)" : "";
+  log.header(`pull${modeLabel}${dryLabel}`);
 
   log.log(`  Source: ${source}`);
   log.log(`  Destination: ${cwd}`);
@@ -121,41 +123,94 @@ export async function pull(
     return;
   }
 
-  const result = await copyProviders(source, cwd, activeProviders, {
-    force: options.force,
-    dryRun: options.dryRun,
-  });
+  if (options.link) {
+    const result = await linkProviders(source, cwd, activeProviders, {
+      force: options.force,
+      dryRun: options.dryRun,
+    });
 
-  if (options.dryRun) {
-    log.log("  Would copy:");
-    for (const item of result.copied) {
-      log.item(item.path, `(${item.type})`);
+    if (options.dryRun) {
+      log.log("  Would link:");
+      for (const item of result.linked) {
+        log.item(item.path, `(${item.type})`);
+      }
+      for (const path of result.skipped) {
+        log.item(path, "(exists, use --force to overwrite)");
+      }
+      log.log("");
+      log.log("  No changes made. Remove --dry-run to apply.");
+    } else {
+      log.log("  Linking...");
+      for (const item of result.linked) {
+        log.item(item.path, "✓");
+      }
+      for (const path of result.skipped) {
+        log.item(path, "skipped (exists, use --force)");
+      }
+
+      if (result.linked.length > 0) {
+        await writeLock(cwd, source, result.linked, "link");
+      }
+
+      log.log("");
+      log.success(`${result.linked.length} item(s) linked`);
+      if (result.skipped.length > 0) {
+        log.warn(`${result.skipped.length} item(s) skipped`);
+      }
+      if (result.linked.length > 0) {
+        log.success("aisync-lock.json written");
+      }
     }
-    for (const path of result.skipped) {
-      log.item(path, "(exists, use --force to overwrite)");
-    }
-    log.log("");
-    log.log("  No changes made. Remove --dry-run to apply.");
   } else {
-    log.log("  Pulling...");
-    for (const item of result.copied) {
-      log.item(item.path, "✓");
-    }
-    for (const path of result.skipped) {
-      log.item(path, "skipped (exists, use --force)");
-    }
+    const existingLock = await readLock(cwd);
+    const result = await copyProviders(source, cwd, activeProviders, {
+      force: options.force,
+      dryRun: options.dryRun,
+      lock: existingLock,
+    });
 
-    if (result.copied.length > 0) {
-      await writeLock(cwd, source, result.copied, "copy");
-    }
+    if (options.dryRun) {
+      log.log("  Would copy:");
+      for (const item of result.copied) {
+        log.item(item.path, `(${item.type})`);
+      }
+      for (const path of result.drifted) {
+        log.item(path, "(drift, use --force to overwrite)");
+      }
+      for (const path of result.skipped) {
+        log.item(path, "(exists, use --force to overwrite)");
+      }
+      log.log("");
+      log.log("  No changes made. Remove --dry-run to apply.");
+    } else {
+      log.log("  Pulling...");
+      for (const item of result.copied) {
+        log.item(item.path, "✓");
+      }
+      for (const path of result.drifted) {
+        log.item(path, "drift (local edits, use --force to overwrite)");
+      }
+      for (const path of result.skipped) {
+        log.item(path, "skipped (exists, use --force)");
+      }
 
-    log.log("");
-    log.success(`${result.copied.length} item(s) pulled`);
-    if (result.skipped.length > 0) {
-      log.warn(`${result.skipped.length} item(s) skipped`);
-    }
-    if (result.copied.length > 0) {
-      log.success("aisync-lock.json written");
+      if (result.copied.length > 0) {
+        await writeLock(cwd, source, result.copied, "copy");
+      }
+
+      log.log("");
+      log.success(`${result.copied.length} item(s) pulled`);
+      if (result.drifted.length > 0) {
+        log.warn(
+          `${result.drifted.length} item(s) have local edits (drift) - use --force to overwrite`,
+        );
+      }
+      if (result.skipped.length > 0) {
+        log.warn(`${result.skipped.length} item(s) skipped`);
+      }
+      if (result.copied.length > 0) {
+        log.success("aisync-lock.json written");
+      }
     }
   }
 

@@ -11,6 +11,7 @@ export interface SyncOptions {
   verbose: boolean;
   quiet?: boolean;
   interactive?: boolean;
+  link?: boolean;
 }
 
 export interface ResolvedPaths {

@@ -155,11 +155,22 @@ async function runPullWizard(): Promise<void> {
     }
   }
 
+  const mode = abortIfCancel(
+    await select<"copy" | "link">({
+      message: "Pull using copy or symlink?",
+      options: [
+        { label: "copy  - Duplicate files", value: "copy" },
+        { label: "link  - Symlink from source", value: "link" },
+      ],
+    }),
+  );
+
   await pull(chosen, {
     dryRun: false,
     force: false,
     verbose: false,
     interactive: true,
+    link: mode === "link",
   });
 }
 

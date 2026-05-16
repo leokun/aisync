@@ -209,11 +209,12 @@ describe("runWizard", () => {
     expect(mockCopy.mock.calls[1][1]).toBe("../extra");
   });
 
-  it("dispatches to pull with chosen source from candidate list", async () => {
+  it("dispatches to pull with chosen source from candidate list (copy mode)", async () => {
     setTTY(true);
     mockSelect
       .mockResolvedValueOnce("pull")
-      .mockResolvedValueOnce("/repo/main");
+      .mockResolvedValueOnce("/repo/main")
+      .mockResolvedValueOnce("copy");
     mockIsGitRepo.mockResolvedValueOnce(true);
     mockFindCandidateSources.mockResolvedValueOnce([
       { path: "/repo/main", branch: "main", bare: false },
@@ -230,7 +231,27 @@ describe("runWizard", () => {
       force: false,
       verbose: false,
       interactive: true,
+      link: false,
     });
+  });
+
+  it("dispatches to pull with link:true when wizard selects link mode", async () => {
+    setTTY(true);
+    mockSelect
+      .mockResolvedValueOnce("pull")
+      .mockResolvedValueOnce("/repo/main")
+      .mockResolvedValueOnce("link");
+    mockIsGitRepo.mockResolvedValueOnce(true);
+    mockFindCandidateSources.mockResolvedValueOnce([
+      { path: "/repo/main", branch: "main", bare: false },
+      { path: "/repo/feature-a", branch: "feature-a", bare: false },
+    ]);
+
+    const { runWizard } = await import("../../../src/commands/wizard.js");
+    await runWizard();
+
+    expect(mockPull).toHaveBeenCalledOnce();
+    expect(mockPull.mock.calls[0][1]).toMatchObject({ link: true });
   });
 
   it("excludes the source worktree from destination choices", async () => {

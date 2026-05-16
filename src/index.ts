@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { clean } from "./commands/clean.js";
+import { completion } from "./commands/completion.js";
 import { copy } from "./commands/copy.js";
 import { doctor } from "./commands/doctor.js";
 import { hookInstall, hookRemove } from "./commands/hook.js";
@@ -135,6 +136,11 @@ program
   .option("-v, --verbose", "Show detailed output", false)
   .option("-q, --quiet", "Suppress info output (warn/error only)", false)
   .action(clean);
+
+program
+  .command("completion <shell>")
+  .description("Output shell completion script (bash|zsh|fish)")
+  .action(completion);
 
 if (process.argv.length <= 2 && isTTY()) {
   runWizard().catch((err) => {

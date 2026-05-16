@@ -87,6 +87,21 @@ aisync hook remove
 
 Installs (or removes) a `post-checkout` git hook that runs `aisync copy` after switching branches or creating a new worktree.
 
+### Shell completion
+
+aisync ships completion scripts for bash, zsh, and fish:
+
+```bash
+# bash
+aisync completion bash > /etc/bash_completion.d/aisync
+
+# zsh (directory must be on $fpath)
+aisync completion zsh > ~/.zfunc/_aisync
+
+# fish
+aisync completion fish > ~/.config/fish/completions/aisync.fish
+```
+
 ### Diagnose sync state
 
 ```bash

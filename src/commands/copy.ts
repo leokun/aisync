@@ -1,6 +1,6 @@
 import { readConfig } from "../core/config.js";
 import { copyProviders } from "../core/copier.js";
-import { writeLock } from "../core/lock.js";
+import { readLock, writeLock } from "../core/lock.js";
 import { scanProviders } from "../core/scanner.js";
 import { buildProviders, filterProviders } from "../providers/registry.js";
 import * as log from "../utils/logger.js";
@@ -64,15 +64,20 @@ export async function copy(
     return;
   }
 
+  const existingLock = await readLock(destination);
   const result = await copyProviders(source, destination, activeProviders, {
     force: options.force,
     dryRun: options.dryRun,
+    lock: existingLock,
   });
 
   if (options.dryRun) {
     log.log("  Would copy:");
     for (const item of result.copied) {
       log.item(item.path, `(${item.type})`);
+    }
+    for (const path of result.drifted) {
+      log.item(path, "(drift, use --force to overwrite)");
     }
     for (const path of result.skipped) {
       log.item(path, "(exists, use --force to overwrite)");
@@ -84,6 +89,9 @@ export async function copy(
     for (const item of result.copied) {
       log.item(item.path, "✓");
     }
+    for (const path of result.drifted) {
+      log.item(path, "drift (local edits, use --force to overwrite)");
+    }
     for (const path of result.skipped) {
       log.item(path, "skipped (exists, use --force)");
     }
@@ -94,6 +102,11 @@ export async function copy(
 
     log.log("");
     log.success(`${result.copied.length} item(s) copied`);
+    if (result.drifted.length > 0) {
+      log.warn(
+        `${result.drifted.length} item(s) have local edits (drift) - use --force to overwrite`,
+      );
+    }
     if (result.skipped.length > 0) {
       log.warn(`${result.skipped.length} item(s) skipped`);
     }

@@ -2,6 +2,7 @@ import { join } from "node:path";
 import type { Provider } from "../providers/registry.js";
 import { copyItem, exists, isDirectory } from "../utils/fs.js";
 import { hashItem } from "../utils/hash.js";
+import type { LockFile } from "./lock.js";
 
 export interface CopyItem {
   path: string;
@@ -13,16 +14,25 @@ export interface CopyItem {
 export interface CopyResult {
   copied: CopyItem[];
   skipped: string[];
+  drifted: string[];
 }
 
 export async function copyProviders(
   source: string,
   destination: string,
   providers: Provider[],
-  options: { force: boolean; dryRun: boolean },
+  options: { force: boolean; dryRun: boolean; lock?: LockFile | null },
 ): Promise<CopyResult> {
   const copied: CopyItem[] = [];
   const skipped: string[] = [];
+  const drifted: string[] = [];
+
+  const lockItems = new Map<string, string>();
+  if (options.lock) {
+    for (const item of options.lock.items) {
+      if (item.hash) lockItems.set(item.path, item.hash);
+    }
+  }
 
   for (const provider of providers) {
     for (const relativePath of provider.paths) {
@@ -33,7 +43,20 @@ export async function copyProviders(
         continue;
       }
 
-      if ((await exists(destPath)) && !options.force) {
+      const destExists = await exists(destPath);
+      const lockedHash = lockItems.get(relativePath);
+
+      if (destExists && lockedHash) {
+        const destHash = await hashItem(destPath);
+        if (destHash !== lockedHash) {
+          if (!options.force) {
+            drifted.push(relativePath);
+            continue;
+          }
+        }
+      }
+
+      if (destExists && !options.force) {
         skipped.push(relativePath);
         continue;
       }
@@ -49,5 +72,5 @@ export async function copyProviders(
     }
   }
 
-  return { copied, skipped };
+  return { copied, skipped, drifted };
 }

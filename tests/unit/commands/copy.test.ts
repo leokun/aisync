@@ -78,6 +78,7 @@ function setupValidSource() {
       { path: "CLAUDE.md", type: "file", provider: "claude", hash: "abcd1234" },
     ],
     skipped: [],
+    drifted: [],
   });
   mockWriteLock.mockResolvedValue(undefined);
 }
@@ -221,7 +222,7 @@ describe("copy command", () => {
         expect.any(String),
         expect.any(String),
         expect.any(Array),
-        { force: true, dryRun: true },
+        expect.objectContaining({ force: true, dryRun: true }),
       );
     });
 
@@ -267,6 +268,7 @@ describe("copy command", () => {
       mockCopyProviders.mockResolvedValue({
         copied: [],
         skipped: ["CLAUDE.md"],
+        drifted: [],
       });
 
       await copy("/src", "/dest", defaultOpts);
@@ -291,12 +293,55 @@ describe("copy command", () => {
           },
         ],
         skipped: ["CLAUDE.md"],
+        drifted: [],
       });
       mockWriteLock.mockResolvedValue(undefined);
 
       await copy("/src", "/dest", defaultOpts);
 
       expect(log.warn).toHaveBeenCalledWith("1 item(s) skipped");
+    });
+
+    it("warns when items have drift", async () => {
+      mockExists.mockResolvedValue(true);
+      mockIsDirectory.mockResolvedValue(true);
+      mockFilterProviders.mockReturnValue([claude]);
+      mockScanProviders.mockResolvedValue([
+        { provider: claude, foundPaths: [".claude/"], missingPaths: [] },
+      ]);
+      mockCopyProviders.mockResolvedValue({
+        copied: [],
+        skipped: [],
+        drifted: ["CLAUDE.md"],
+      });
+
+      await copy("/src", "/dest", defaultOpts);
+
+      expect(log.warn).toHaveBeenCalledWith(
+        expect.stringContaining("local edits (drift)"),
+      );
+      expect(mockWriteLock).not.toHaveBeenCalled();
+    });
+
+    it("passes existing lock to copyProviders", async () => {
+      setupValidSource();
+      const lock = {
+        version: 1,
+        source: "/src",
+        lastSync: new Date().toISOString(),
+        mode: "copy" as const,
+        items: [],
+      };
+      mockReadLock.mockResolvedValue(lock);
+
+      await copy("/src", "/dest", defaultOpts);
+
+      expect(mockCopyProviders).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(String),
+        expect.any(Array),
+        expect.objectContaining({ lock }),
+      );
     });
   });
 });

@@ -132,4 +132,53 @@ describe("copy flow (integration)", () => {
     // No lock file
     expect(await readLock(dest)).toBeNull();
   });
+
+  it("detects drift and skips overwriting local edits without force", async () => {
+    await scaffold(src, { "CLAUDE.md": "v1" });
+    const first = await copyProviders(src, dest, [claude], {
+      force: false,
+      dryRun: false,
+    });
+    await writeLock(dest, src, first.copied);
+
+    // Local edits at dest + upstream change at src
+    await scaffold(dest, { "CLAUDE.md": "locally modified" });
+    await scaffold(src, { "CLAUDE.md": "v2" });
+
+    const lock = await readLock(dest);
+    const result = await copyProviders(src, dest, [claude], {
+      force: false,
+      dryRun: false,
+      lock,
+    });
+
+    expect(result.drifted).toContain("CLAUDE.md");
+    expect(result.copied).toHaveLength(0);
+    expect(await readFile(join(dest, "CLAUDE.md"), "utf-8")).toBe(
+      "locally modified",
+    );
+  });
+
+  it("overwrites drifted files when force is set", async () => {
+    await scaffold(src, { "CLAUDE.md": "v1" });
+    const first = await copyProviders(src, dest, [claude], {
+      force: false,
+      dryRun: false,
+    });
+    await writeLock(dest, src, first.copied);
+
+    await scaffold(dest, { "CLAUDE.md": "locally modified" });
+    await scaffold(src, { "CLAUDE.md": "v2" });
+
+    const lock = await readLock(dest);
+    const result = await copyProviders(src, dest, [claude], {
+      force: true,
+      dryRun: false,
+      lock,
+    });
+
+    expect(result.copied).toHaveLength(1);
+    expect(result.drifted).toHaveLength(0);
+    expect(await readFile(join(dest, "CLAUDE.md"), "utf-8")).toBe("v2");
+  });
 });

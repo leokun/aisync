@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Breaking**: removed the `-l/--link` flag from `aisync watch`. Mode is now read from existing locks; mixing modes across siblings is not supported within a single watch session.
 
 ### Fixed
-- `copy` and `link` path arguments now expand environment variable names such as `CODEX_SOURCE_TREE_PATH` and `CODEX_WORKTREE_PATH` before resolving paths.
+- `copy` and `link` path arguments now expand environment variable names before resolving paths.
 
 ## [0.9.0] - 2026-05-16
 

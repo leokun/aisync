@@ -20,32 +20,49 @@ export interface ResolvedPaths {
   fromLock: boolean;
 }
 
+function expandPathArg(arg: string | undefined): string | undefined {
+  if (!arg) return arg;
+
+  const bracedMatch = arg.match(/^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$/);
+  const prefixedMatch = arg.match(/^\$([A-Za-z_][A-Za-z0-9_]*)$/);
+  const bareMatch = arg.match(/^[A-Z_][A-Z0-9_]*$/);
+  const envName = bracedMatch?.[1] ?? prefixedMatch?.[1] ?? bareMatch?.[0];
+
+  if (!envName || (bareMatch && !envName.includes("_"))) return arg;
+
+  return process.env[envName] ?? arg;
+}
+
 export async function resolveSourceDest(
   sourceArg: string | undefined,
   destArg: string | undefined,
   commandName: string,
   configSource?: string,
 ): Promise<ResolvedPaths | null> {
-  if (destArg) {
+  const sourcePath = expandPathArg(sourceArg);
+  const destPath = expandPathArg(destArg);
+  const configSourcePath = expandPathArg(configSource);
+
+  if (destPath) {
     return {
-      source: resolve(sourceArg ?? configSource ?? "."),
-      destination: resolve(destArg),
+      source: resolve(sourcePath ?? configSourcePath ?? "."),
+      destination: resolve(destPath),
       fromLock: false,
     };
   }
 
-  if (sourceArg) {
+  if (sourcePath) {
     const lock = await readLock(".");
     if (lock) {
       return {
         source: lock.source,
-        destination: resolve(sourceArg),
+        destination: resolve(sourcePath),
         fromLock: false,
       };
     }
     return {
-      source: resolve(configSource ?? "."),
-      destination: resolve(sourceArg),
+      source: resolve(configSourcePath ?? "."),
+      destination: resolve(sourcePath),
       fromLock: false,
     };
   }

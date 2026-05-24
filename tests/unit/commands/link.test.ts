@@ -97,6 +97,8 @@ describe("link command", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+    delete process.env.AISYNC_SOURCE_PATH;
+    delete process.env.AISYNC_DEST_PATH;
     process.exitCode = undefined;
   });
 
@@ -111,6 +113,18 @@ describe("link command", () => {
       const linkCall = mockLinkProviders.mock.calls[0];
       expect(linkCall[0]).toContain("src");
       expect(linkCall[1]).toContain("dest");
+    });
+
+    it("expands environment variable names in path arguments", async () => {
+      setupValidSource();
+      process.env.AISYNC_SOURCE_PATH = "/env-src";
+      process.env.AISYNC_DEST_PATH = "/env-dest";
+
+      await link("AISYNC_SOURCE_PATH", "AISYNC_DEST_PATH", defaultOpts);
+
+      const linkCall = mockLinkProviders.mock.calls[0];
+      expect(linkCall[0]).toBe("/env-src");
+      expect(linkCall[1]).toBe("/env-dest");
     });
 
     it("uses lock source + sourceArg as dest when one arg with lock", async () => {

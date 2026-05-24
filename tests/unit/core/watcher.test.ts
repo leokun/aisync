@@ -128,7 +128,10 @@ describe("createBidirectionalWatcher", () => {
   });
 
   it("propagates origin changes to peers via copyProviders", async () => {
-    const watchCallbacks = new Map<string, (e: string, fname: string) => void>();
+    const watchCallbacks = new Map<
+      string,
+      (e: string, fname: string) => void
+    >();
     mockWatch.mockImplementation((path, _opts, cb) => {
       watchCallbacks.set(
         String(path),
@@ -192,7 +195,10 @@ describe("createBidirectionalWatcher", () => {
   });
 
   it("suppresses echo events while inFlightWrites is active", async () => {
-    const watchCallbacks = new Map<string, (e: string, fname: string) => void>();
+    const watchCallbacks = new Map<
+      string,
+      (e: string, fname: string) => void
+    >();
     mockWatch.mockImplementation((path, _opts, cb) => {
       watchCallbacks.set(
         String(path),
@@ -235,7 +241,10 @@ describe("createBidirectionalWatcher", () => {
   });
 
   it("uses link mode when configured", async () => {
-    const watchCallbacks = new Map<string, (e: string, fname: string) => void>();
+    const watchCallbacks = new Map<
+      string,
+      (e: string, fname: string) => void
+    >();
     mockWatch.mockImplementation((path, _opts, cb) => {
       watchCallbacks.set(
         String(path),
@@ -270,7 +279,10 @@ describe("createBidirectionalWatcher", () => {
   });
 
   it("debounces multiple events for the same origin", async () => {
-    const watchCallbacks = new Map<string, (e: string, fname: string) => void>();
+    const watchCallbacks = new Map<
+      string,
+      (e: string, fname: string) => void
+    >();
     mockWatch.mockImplementation((path, _opts, cb) => {
       watchCallbacks.set(
         String(path),
@@ -313,4 +325,3 @@ describe("createBidirectionalWatcher", () => {
     w.stop();
   });
 });
-

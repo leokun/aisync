@@ -120,7 +120,9 @@ export async function watchCommand(
     return;
   }
 
-  log.success(`Watching ${participants.length} participant(s). Ctrl+C to stop.`);
+  log.success(
+    `Watching ${participants.length} participant(s). Ctrl+C to stop.`,
+  );
   log.log("");
 
   const shutdown = (): void => {

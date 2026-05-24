@@ -30,7 +30,7 @@ export interface BidirectionalWatcher {
 export function createBidirectionalWatcher(
   options: BidirectionalWatcherOptions,
 ): BidirectionalWatcher {
-  const { participants, providers, mode, force, debounceMs } = options;
+  const { participants, providers, mode, debounceMs } = options;
 
   const inFlightWrites = new Set<string>();
   const graceMs = Math.max(500, 2 * debounceMs);
@@ -81,7 +81,9 @@ export function createBidirectionalWatcher(
   }
 
   async function propagate(origin: string): Promise<void> {
-    const peers = participants.filter((p) => resolve(p.path) !== resolve(origin));
+    const peers = participants.filter(
+      (p) => resolve(p.path) !== resolve(origin),
+    );
     if (peers.length === 0) return;
 
     const stamp = new Date().toLocaleTimeString();

@@ -1,6 +1,6 @@
 {
   "name": "@leokun-wasabee/aisync",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Sync AI tool configurations between git worktrees",
   "type": "module",
   "packageManager": "pnpm@11.0.8",

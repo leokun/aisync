@@ -7,12 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-05-24
+
 ### Added
 - `aisync completion <bash|zsh|fish>` command emits a shell completion script to stdout. Covers all commands, subcommands, flags, and dynamic provider names sourced from the registry.
 
 ### Changed
 - **Breaking**: `aisync watch` is now bidirectional. Changes in any participating worktree propagate to all others, not just from a single source. Participants are discovered from `aisync-lock.json` files; the sync mode is inherited from the first lock found.
 - **Breaking**: removed the `-l/--link` flag from `aisync watch`. Mode is now read from existing locks; mixing modes across siblings is not supported within a single watch session.
+
+### Fixed
+- `copy` and `link` path arguments now expand environment variable names such as `CODEX_SOURCE_TREE_PATH` and `CODEX_WORKTREE_PATH` before resolving paths.
 
 ## [0.9.0] - 2026-05-16
 
@@ -86,6 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `aisync-lock.json` tracking for re-sync.
 - `aisync status`, `aisync list providers`, `aisync list worktrees`.
 
+[0.10.0]: https://github.com/leokun/aisync/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/leokun/aisync/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/leokun/aisync/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/leokun/aisync/compare/v0.6.0...v0.7.1
